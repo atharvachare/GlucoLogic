@@ -4,11 +4,19 @@ const path = require('path');
 let db, auth;
 
 try {
-  // Path to your downloaded service account key
-  const serviceAccountPath = path.join(__dirname, 'serviceAccountKey.json');
+  let credential;
   
+  // Prefer Environment Variable in Production (Render)
+  if (process.env.FIREBASE_CREDENTIALS) {
+      credential = admin.credential.cert(JSON.parse(process.env.FIREBASE_CREDENTIALS));
+  } else {
+      // Fallback for Local Development
+      const serviceAccountPath = path.join(__dirname, 'serviceAccountKey.json');
+      credential = admin.credential.cert(serviceAccountPath);
+  }
+
   admin.initializeApp({
-    credential: admin.credential.cert(serviceAccountPath)
+    credential: credential
   });
 
   db = admin.firestore();
