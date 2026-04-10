@@ -1,0 +1,166 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;800&display=swap');
+
+:root {
+  --primary: hsl(210, 100%, 50%);
+  --primary-hover: hsl(210, 100%, 40%);
+  --success: hsl(145, 65%, 45%);
+  --warning: hsl(45, 100%, 50%);
+  --danger: hsl(0, 85%, 60%);
+  --background: hsl(222, 47%, 11%);
+  --glass-bg: hsla(222, 47%, 15%, 0.7);
+  --glass-border: hsla(222, 47%, 25%, 0.5);
+  --surface: hsl(222, 47%, 15%);
+  --text: hsl(0, 0%, 95%);
+  --text-dim: hsl(0, 0%, 70%);
+  --radius: 12px;
+  --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--background);
+  color: var(--text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  background-image: radial-gradient(circle at top right, hsla(210, 100%, 50%, 0.1), transparent),
+                    radial-gradient(circle at bottom left, hsla(145, 65%, 45%, 0.05), transparent);
+}
+
+h1, h2, h3, h4 {
+  font-family: 'Outfit', sans-serif;
+}
+
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.btn {
+  padding: 10px 20px;
+  border-radius: var(--radius);
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  font-family: 'Outfit', sans-serif;
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px hsla(210, 100%, 50%, 0.3);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--glass-border);
+  color: var(--text);
+}
+
+.btn-outline:hover {
+  background: var(--glass-border);
+}
+
+.input-field {
+  width: 100%;
+  padding: 12px 16px;
+  background: hsla(222, 47%, 5%, 0.5);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 1rem;
+  transition: var(--transition);
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px hsla(210, 100%, 50%, 0.2);
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* Status Colors */
+.text-success { color: var(--success); }
+.text-warning { color: var(--warning); }
+.text-danger { color: var(--danger); }
+
+.bg-success { background-color: var(--success); }
+.bg-warning { background-color: var(--warning); }
+.bg-danger { background-color: var(--danger); }
+
+/* Kids Mode Overrides */
+.kids-mode {
+  --primary: hsl(330, 100%, 70%); /* Bright Pink */
+  --success: hsl(120, 100%, 50%); /* Lime Green */
+  --warning: hsl(40, 100%, 65%); /* Bright Gold */
+  --danger: hsl(0, 100%, 65%); /* Bright Red */
+  --background: hsl(190, 80%, 40%); /* Sky Blue */
+  --surface: hsl(190, 80%, 50%);
+  --glass-bg: hsla(190, 80%, 60%, 0.8);
+  --glass-border: hsla(190, 80%, 80%, 0.5);
+  --text: white;
+  --text-dim: hsl(190, 80%, 90%);
+  --radius: 30px; /* Rounder corners for kids */
+  font-family: 'Outfit', cursive;
+}
+
+.kids-mode body {
+  background-image: radial-gradient(circle at top right, hsla(40, 100%, 70%, 0.4), transparent),
+                    radial-gradient(circle at bottom left, hsla(330, 100%, 70%, 0.3), transparent);
+}
+
+.kids-mode .glass-card {
+  border-width: 4px;
+  box-shadow: 0 10px 0 hsla(190, 80%, 30%, 0.5);
+}
+
+.kids-mode .btn-primary {
+  transform: rotate(-2deg);
+  font-size: 1.2rem;
+}
+
+.kids-mode .btn-primary:active {
+  transform: scale(0.9) rotate(0deg);
+}
+
+.kids-mode h1 {
+  font-size: 3rem;
+  letter-spacing: 2px;
+  text-shadow: 2px 2px 0 hsla(0, 0%, 0%, 0.2);
+}

@@ -1,0 +1,7 @@
+node_modules/
+.env
+dist/
+.DS_Store
+backend/insulin_system.db
+backend/serviceAccountKey.json
+*.log
