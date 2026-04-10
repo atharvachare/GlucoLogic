@@ -5,13 +5,15 @@ let db, auth;
 
 try {
   let credential;
+  const fs = require('fs');
   
-  // Prefer Environment Variable in Production (Render)
   if (process.env.FIREBASE_CREDENTIALS) {
       credential = admin.credential.cert(JSON.parse(process.env.FIREBASE_CREDENTIALS));
   } else {
-      // Fallback for Local Development
-      const serviceAccountPath = path.join(__dirname, 'serviceAccountKey.json');
+      let serviceAccountPath = path.join(__dirname, 'serviceAccountKey.json');
+      if (!fs.existsSync(serviceAccountPath)) {
+          serviceAccountPath = path.join(__dirname, '../serviceAccountKey.json');
+      }
       credential = admin.credential.cert(serviceAccountPath);
   }
 
