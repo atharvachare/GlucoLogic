@@ -69,7 +69,7 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
       backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center',
       zIndex: 1000, backdropFilter: 'blur(4px)'
     }}>
-      <div className="glass-card animate-fade-in" style={{ width: '100%', maxWidth: '600px', padding: '30px', position: 'relative' }}>
+      <div className="glass-card animate-fade-in" style={{ width: '100%', maxWidth: '600px', padding: '30px', position: 'relative', maxHeight: '90vh', overflowY: 'auto' }}>
         <button onClick={onClose} style={{ position: 'absolute', right: '20px', top: '20px', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}>
           <X size={24} />
         </button>

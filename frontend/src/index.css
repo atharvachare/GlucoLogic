@@ -193,17 +193,20 @@ h1, h2, h3, h4 {
     grid-template-columns: 1fr !important;
   }
 
-  /* Dashboard specific fixes */
+  /* Profile and Dashboard specific fixes */
   header {
     flex-direction: column;
     align-items: flex-start !important;
     gap: 15px;
   }
   
-  header > div:last-child {
-    width: 100%;
-    justify-content: flex-start;
+  header > div {
     flex-wrap: wrap;
+    width: 100%;
+  }
+  
+  header > div:last-child {
+    justify-content: flex-start;
   }
 
   /* Bottom nav positioning */
@@ -222,3 +225,4 @@ h1, h2, h3, h4 {
     white-space: nowrap;
   }
 }
+

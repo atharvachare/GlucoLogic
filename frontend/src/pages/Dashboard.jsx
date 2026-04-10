@@ -239,9 +239,10 @@ const Dashboard = ({ user, setUser }) => {
         </Link>
       </div>
 
-      <div style={{ textAlign: 'center', marginTop: '40px', color: 'var(--text-dim)', fontSize: '0.8rem' }}>
+      {/* Disclaimer and Streak */}
+      <div style={{ textAlign: 'center', marginTop: '20px', paddingBottom: '120px', color: 'var(--text-dim)', fontSize: '0.8rem', lineHeight: '1.4' }}>
         <p>⚠️ DISCLAIMER: This system is for educational purposes only. Not a medical device.</p>
-        <p>Streak: <Flame size={14} color="orange" /> 5 Days</p>
+        <p style={{ marginTop: '5px' }}>Streak: <Flame size={14} color="orange" style={{ verticalAlign: 'middle' }} /> 5 Days</p>
       </div>
 
       <LogEntryModal 
