@@ -93,7 +93,7 @@ const Profile = () => {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '250px 1fr', gap: '30px' }}>
+      <div className="profile-layout">
         {/* Sidebar Nav */}
         <aside className="glass-card" style={{ padding: '10px', height: 'fit-content' }}>
           <button onClick={() => setActiveTab('personal')} className={`btn ${activeTab === 'personal' ? 'btn-primary' : 'btn-outline'}`} style={{ width: '100%', justifyContent: 'flex-start', marginBottom: '5px' }}>
@@ -118,7 +118,7 @@ const Profile = () => {
           {activeTab === 'personal' && (
             <div className="animate-fade-in">
               <h3 style={{ marginBottom: '20px' }}>Personal Details</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+              <div className="res-grid">
                 <div>
                   <label className="text-dim" style={{ fontSize: '0.8rem' }}>Full Name</label>
                   <input className="input-field" value={profile.personal.name} onChange={(e) => setProfile({...profile, personal: {...profile.personal, name: e.target.value}})} />
@@ -159,7 +159,7 @@ const Profile = () => {
           {activeTab === 'medical' && (
             <div className="animate-fade-in">
               <h3 style={{ marginBottom: '20px' }}>Medical Information</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+              <div className="res-grid">
                 <div>
                   <label className="text-dim" style={{ fontSize: '0.8rem' }}>Diabetes Type</label>
                   <select className="input-field" value={profile.medical.diabetes_type} onChange={(e) => setProfile({...profile, medical: {...profile.medical, diabetes_type: e.target.value}})}>
@@ -199,7 +199,7 @@ const Profile = () => {
           {activeTab === 'insulin' && (
             <div className="animate-fade-in">
               <h3 style={{ marginBottom: '20px' }}>Insulin Profile</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+              <div className="res-grid">
                 <div>
                   <label className="text-dim" style={{ fontSize: '0.8rem' }}>Insulin Type Used</label>
                   <select className="input-field" value={profile.insulin.insulin_type} onChange={(e) => setProfile({...profile, insulin: {...profile.insulin, insulin_type: e.target.value}})}>
@@ -231,7 +231,7 @@ const Profile = () => {
           {activeTab === 'lifestyle' && (
             <div className="animate-fade-in">
               <h3 style={{ marginBottom: '20px' }}>Lifestyle Data</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+              <div className="res-grid">
                 <div>
                   <label className="text-dim" style={{ fontSize: '0.8rem' }}>Diet Type</label>
                   <select className="input-field" value={profile.lifestyle.diet_type} onChange={(e) => setProfile({...profile, lifestyle: {...profile.lifestyle, diet_type: e.target.value}})}>
@@ -264,7 +264,7 @@ const Profile = () => {
           {activeTab === 'health' && (
             <div className="animate-fade-in">
               <h3 style={{ marginBottom: '20px' }}>Health Baseline</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px' }}>
+              <div className="res-grid form-grid-3">
                 <div>
                   <label className="text-dim" style={{ fontSize: '0.8rem' }}>Weight (kg)</label>
                   <input type="number" className="input-field" value={profile.health.weight || ''} onChange={(e) => setProfile({...profile, health: {...profile.health, weight: e.target.value}})} />

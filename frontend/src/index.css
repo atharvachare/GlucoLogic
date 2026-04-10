@@ -226,3 +226,26 @@ h1, h2, h3, h4 {
   }
 }
 
+
+/* Explicit Grid Classes to replace inline styles */
+.profile-layout {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  gap: 30px;
+}
+
+.res-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.form-grid-3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+@media (max-width: 768px) {
+  .profile-layout, .res-grid, .form-grid-3 {
+    grid-template-columns: 1fr !important;
+  }
+}

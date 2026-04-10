@@ -80,7 +80,7 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
         </h2>
 
         <form onSubmit={handleSubmit}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
+          <div className="res-grid" style={{ marginBottom: '15px' }}>
             <div>
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>Glucose (Before Meal)</label>
               <div style={{ position: 'relative' }}>
@@ -108,7 +108,7 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
+          <div className="res-grid" style={{ marginBottom: '15px' }}>
             <div>
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>Meal Type</label>
               <div style={{ position: 'relative' }}>
