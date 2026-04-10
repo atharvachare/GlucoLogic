@@ -165,3 +165,60 @@ h1, h2, h3, h4 {
   letter-spacing: 2px;
   text-shadow: 2px 2px 0 hsla(0, 0%, 0%, 0.2);
 }
+
+/* RESPONSIVE DESIGN (MOBILE & TABLET) */
+@media (max-width: 768px) {
+  .container {
+    padding: 15px !important;
+  }
+  
+  .glass-card {
+    padding: 20px !important; 
+  }
+  
+  h1 {
+    font-size: 1.8rem !important;
+  }
+  
+  h2 {
+    font-size: 1.5rem !important;
+  }
+  
+  h3 {
+    font-size: 1.2rem !important;
+  }
+
+  /* Make grids flow vertically on small screens */
+  [style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Dashboard specific fixes */
+  header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 15px;
+  }
+  
+  header > div:last-child {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  /* Bottom nav positioning */
+  div[style*="bottom: 30px"] {
+    width: 90% !important;
+    bottom: 15px !important;
+    justify-content: center;
+  }
+  
+  /* Tables */
+  table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+}
