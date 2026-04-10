@@ -34,7 +34,13 @@ const Profile = () => {
   const fetchProfile = async () => {
     try {
       const resp = await api.get('/profile');
-      setProfile(resp.data);
+      setProfile(prevState => ({
+        personal: { ...prevState.personal, ...resp.data.personal },
+        medical: { ...prevState.medical, ...resp.data.medical },
+        insulin: { ...prevState.insulin, ...resp.data.insulin },
+        lifestyle: { ...prevState.lifestyle, ...resp.data.lifestyle },
+        health: { ...prevState.health, ...resp.data.health }
+      }));
     } catch (err) {
       console.error('Failed to fetch profile', err);
     } finally {
