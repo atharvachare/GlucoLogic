@@ -1,17 +1,18 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;800&display=swap');
 
 :root {
-  --primary: hsl(210, 100%, 50%);
-  --primary-hover: hsl(210, 100%, 40%);
+  --primary: #38BDF8;
+  --primary-hover: #0284C7;
+  --accent: #8B5CF6;
   --success: hsl(145, 65%, 45%);
   --warning: hsl(45, 100%, 50%);
   --danger: hsl(0, 85%, 60%);
-  --background: hsl(222, 47%, 11%);
-  --glass-bg: hsla(222, 47%, 15%, 0.7);
-  --glass-border: hsla(222, 47%, 25%, 0.5);
-  --surface: hsl(222, 47%, 15%);
-  --text: hsl(0, 0%, 95%);
-  --text-dim: hsl(0, 0%, 70%);
+  --background: #0F172A;
+  --glass-bg: rgba(15, 23, 42, 0.6);
+  --glass-border: rgba(139, 92, 246, 0.3);
+  --surface: #1E293B;
+  --text: #F8FAFC;
+  --text-dim: #CBD5E1;
   --radius: 12px;
   --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -30,8 +31,8 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
-  background-image: radial-gradient(circle at top right, hsla(210, 100%, 50%, 0.1), transparent),
-                    radial-gradient(circle at bottom left, hsla(145, 65%, 45%, 0.05), transparent);
+  background-image: radial-gradient(circle at top right, rgba(56, 189, 248, 0.1), transparent),
+                    radial-gradient(circle at bottom left, rgba(139, 92, 246, 0.15), transparent);
 }
 
 h1, h2, h3, h4 {
