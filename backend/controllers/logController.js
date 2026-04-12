@@ -172,4 +172,43 @@ const deleteLog = async (req, res) => {
     }
 };
 
-module.exports = { createLog, getLogs, getSuggestion, getDashboardStats, updateLog, deleteLog };
+/**
+ * One-time migration: retroactively calculate ISF for all old log entries.
+ * Fixes logs that have 'effectiveness' field or are missing 'isf' entirely.
+ */
+const migrateISF = async (req, res) => {
+    const userId = req.user.id;
+    try {
+        const snapshot = await db.collection('users').doc(userId).collection('logs').get();
+        const batch = db.batch();
+        let updatedCount = 0;
+
+        snapshot.docs.forEach(doc => {
+            const data = doc.data();
+            const { glucose_before, glucose_after, insulin_units } = data;
+
+            // Only process logs that have all 3 readings but no valid 'isf' yet
+            const hasReadings = glucose_before && glucose_after && insulin_units > 0;
+            const needsMigration = data.isf === undefined || data.isf === null;
+
+            if (hasReadings && needsMigration) {
+                const calculatedISF = calculateISF(glucose_before, glucose_after, insulin_units);
+                batch.update(doc.ref, { isf: calculatedISF });
+                updatedCount++;
+            }
+        });
+
+        await batch.commit();
+
+        // Recalculate global stats with all the newly computed ISF values
+        await reCalculateUserStats(userId);
+
+        res.json({ message: `Migration complete. Updated ${updatedCount} log entries.`, updatedCount });
+    } catch (error) {
+        console.error('Migration error:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+module.exports = { createLog, getLogs, getSuggestion, getDashboardStats, updateLog, deleteLog, migrateISF };
+

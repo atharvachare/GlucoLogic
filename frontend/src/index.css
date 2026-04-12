@@ -116,6 +116,15 @@ h1, h2, h3, h4 {
   animation: fadeIn 0.5s ease-out forwards;
 }
 
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
 /* Status Colors */
 .text-success { color: var(--success); }
 .text-warning { color: var(--warning); }

@@ -15,6 +15,7 @@ app.use(express.json());
 // Import controllers
 const authController = require('./controllers/authController');
 const logController = require('./controllers/logController');
+const { createLog, getLogs, getSuggestion, getDashboardStats, updateLog, deleteLog, migrateISF } = require('./controllers/logController');
 const profileRoutes = require('./routes/profile');
 
 // Auth Routes
@@ -32,6 +33,7 @@ app.put('/api/logs/:id', authMiddleware, logController.updateLog);
 app.delete('/api/logs/:id', authMiddleware, logController.deleteLog);
 app.get('/api/suggestions', authMiddleware, logController.getSuggestion);
 app.get('/api/dashboard', authMiddleware, logController.getDashboardStats);
+app.post('/api/logs/migrate-isf', authMiddleware, migrateISF);
 
 // Start server
 app.listen(PORT, () => {
