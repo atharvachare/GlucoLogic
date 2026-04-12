@@ -165,7 +165,7 @@ const Dashboard = ({ user, setUser }) => {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
             <div style={{ padding: '15px', background: 'hsla(222, 47%, 5%, 0.3)', borderRadius: 'var(--radius)' }}>
               <div style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>Avg Effectiveness</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: '700' }}>{stats.avg_effectiveness ? stats.avg_effectiveness.toFixed(2) : '--'}</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: '700' }}>{stats.avg_effectiveness > 0 ? stats.avg_effectiveness.toFixed(2) : '--'}</div>
               <div style={{ fontSize: '0.7rem' }}>mg/dL drop per unit</div>
             </div>
             <div style={{ padding: '15px', background: 'hsla(222, 47%, 5%, 0.3)', borderRadius: 'var(--radius)' }}>
