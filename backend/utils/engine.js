@@ -51,8 +51,8 @@ const reCalculateUserStats = async (userId) => {
     const avgISF = totalWeightedISF / totalWeight;
 
     let confidence = 'Low';
-    if (logs.length >= 30) confidence = 'High';
-    else if (logs.length >= 10) confidence = 'Medium';
+    if (logs.length >= 15) confidence = 'High';
+    else if (logs.length >= 5) confidence = 'Medium';
 
     const stats = {
         avg_isf: avgISF,
