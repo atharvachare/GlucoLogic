@@ -45,18 +45,43 @@ const getLogs = async (req, res) => {
         const snapshot = await db.collection('users').doc(userId).collection('logs')
             .orderBy('timestamp', 'desc').get();
 
-        const logs = snapshot.docs.map(doc => {
+        const logs = [];
+        const batch = db.batch();
+        let needsBatch = false;
+
+        snapshot.docs.forEach(doc => {
             const data = doc.data();
-            // Filter out any stale negative ISF stored from old calculation logic
-            if (data.isf !== null && data.isf !== undefined && data.isf <= 0) {
-                data.isf = null;
+            let isf = data.isf;
+
+            // Handle stale negative values
+            if (isf !== null && isf !== undefined && isf <= 0) {
+                isf = null;
             }
-            // Backwards compat: rename old 'effectiveness' field to 'isf' for display
-            if (data.effectiveness !== undefined && data.isf === undefined) {
-                data.isf = (data.effectiveness > 0) ? data.effectiveness : null;
+
+            // Auto-calculate if missing but data is complete
+            if (isf === undefined || isf === null) {
+                const { glucose_before, glucose_after, insulin_units, effectiveness } = data;
+                
+                // Fallback to legacy effectiveness if available
+                if (effectiveness > 0) {
+                    isf = effectiveness;
+                } else if (glucose_before && glucose_after && insulin_units > 0) {
+                    // Recalculate if we have the raw numbers
+                    isf = calculateISF(glucose_before, glucose_after, insulin_units);
+                }
+
+                if (isf !== undefined && isf !== null) {
+                    batch.update(doc.ref, { isf });
+                    needsBatch = true;
+                }
             }
-            return data;
+
+            logs.push({ ...data, isf });
         });
+
+        if (needsBatch) {
+            await batch.commit();
+        }
 
         res.json(logs);
     } catch (error) {

@@ -9,8 +9,7 @@ import {
   Trash2, 
   AlertCircle,
   X,
-  Check,
-  RefreshCw
+  Check
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import LogEntryModal from '../components/LogEntryModal';
@@ -49,8 +48,6 @@ const History = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedLog, setSelectedLog] = useState(null);
-  const [migrating, setMigrating] = useState(false);
-  const [migrateMsg, setMigrateMsg] = useState('');
 
   useEffect(() => {
     fetchLogs();
@@ -87,20 +84,6 @@ const History = () => {
     setShowEditModal(true);
   };
 
-  const handleMigrateISF = async () => {
-    setMigrating(true);
-    setMigrateMsg('');
-    try {
-      const resp = await api.post('/logs/migrate-isf');
-      setMigrateMsg(`✅ ${resp.data.message}`);
-      fetchLogs(); // Refresh the table to show computed ISF values
-    } catch (err) {
-      setMigrateMsg('❌ Migration failed. Please try again.');
-      console.error('Migrate ISF failed', err);
-    } finally {
-      setMigrating(false);
-    }
-  };
 
   const filteredLogs = filter === 'all' 
     ? logs 
@@ -114,18 +97,7 @@ const History = () => {
           <h1 style={{ fontSize: '2rem' }}>Entry History</h1>
         </div>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
-        >
-          <button
-            className="btn btn-outline"
-            onClick={handleMigrateISF}
-            disabled={migrating}
-            title="Recalculate ISF for all old log entries"
-            style={{ fontSize: '0.8rem', gap: '6px' }}
-          >
-            <RefreshCw size={14} className={migrating ? 'spin' : ''} />
-            {migrating ? 'Calculating...' : 'Recalculate ISF'}
-          </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <Filter size={18} className="text-dim" />
           <select 
             className="input-field" 
@@ -141,17 +113,6 @@ const History = () => {
           </select>
         </div>
       </header>
-
-      {migrateMsg && (
-        <div style={{
-          padding: '12px 20px', marginBottom: '20px', borderRadius: 'var(--radius)',
-          background: migrateMsg.startsWith('✅') ? 'hsla(145, 65%, 45%, 0.15)' : 'hsla(0, 65%, 45%, 0.15)',
-          border: `1px solid ${migrateMsg.startsWith('✅') ? 'var(--success)' : 'var(--danger)'}`,
-          fontSize: '0.9rem', fontWeight: '500'
-        }}>
-          {migrateMsg}
-        </div>
-      )}
 
       {loading ? (
         <div style={{ color: 'var(--text-dim)' }}>Loading history...</div>
