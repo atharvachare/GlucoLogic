@@ -28,7 +28,7 @@ const DeleteModal = ({ isOpen, onConfirm, onCancel, itemName }) => {
         </div>
         <h3 style={{ marginBottom: '10px' }}>Delete Entry?</h3>
         <p className="text-dim" style={{ marginBottom: '30px', fontSize: '0.9rem' }}>
-          This action cannot be undone. Your local effectiveness statistics will be updated immediately.
+          This action cannot be undone. Your local ISF statistics will be updated immediately.
         </p>
         <div style={{ display: 'flex', gap: '10px' }}>
           <button className="btn btn-outline" style={{ flex: 1, justifyContent: 'center' }} onClick={onCancel}>Cancel</button>

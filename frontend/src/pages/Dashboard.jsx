@@ -19,7 +19,7 @@ import Onboarding from '../components/Onboarding';
 import { Link } from 'react-router-dom';
 
 const Dashboard = ({ user, setUser }) => {
-  const [stats, setStats] = useState({ avg_effectiveness: 0, confidence_score: 'Low', total_logs: 0 });
+  const [stats, setStats] = useState({ avg_isf: 0, confidence_score: 'Low', total_logs: 0 });
   const [recentLogs, setRecentLogs] = useState([]);
   const [healthInfo, setHealthInfo] = useState(null);
   const [lifestyle, setLifestyle] = useState({ activity_level: 'None' });

@@ -97,13 +97,13 @@ async function initDB() {
             food_description TEXT,
             activity_level TEXT,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-            effectiveness REAL,
+            isf REAL,
             FOREIGN KEY (user_id) REFERENCES users(id)
         );
 
         CREATE TABLE IF NOT EXISTS user_stats (
             user_id INTEGER PRIMARY KEY,
-            avg_effectiveness REAL DEFAULT 0,
+            avg_isf REAL DEFAULT 0,
             confidence_score TEXT DEFAULT 'Low',
             total_logs INTEGER DEFAULT 0,
             last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
