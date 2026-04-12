@@ -103,7 +103,7 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
           <div style={{ marginBottom: '15px' }}>
             <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>Glucose (2-3 Hours After)</label>
             <input 
-              type="number" className="input-field" placeholder="mg/dL (Optional - Needed for learning effectiveness)"
+              type="number" className="input-field" placeholder="mg/dL (Optional - Needed for learning ISF)"
               value={formData.glucose_after} onChange={(e) => setFormData({...formData, glucose_after: e.target.value})}
             />
           </div>
@@ -154,7 +154,7 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
           </button>
           
           <p style={{ fontSize: '0.75rem', textAlign: 'center', marginTop: '15px', color: 'var(--text-dim)' }}>
-            Note: Effectiveness is only calculated when both "before" and "after" readings are provided.
+            Note: ISF is only calculated when both "before" and "after" readings are provided.
           </p>
         </form>
       </div>

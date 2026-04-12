@@ -1,14 +1,15 @@
 const { db } = require('../firebase');
-const { calculateEntryEffectiveness, reCalculateUserStats, getInsulinSuggestion } = require('../utils/engine');
+const { calculateISF, reCalculateUserStats, getInsulinSuggestion } = require('../utils/engine');
 
 const createLog = async (req, res) => {
     const { glucose_before, glucose_after, insulin_units, meal_type, food_description, activity_level } = req.body;
     const userId = req.user.id;
 
     try {
-        let effectiveness = null;
+        // ISF = (before - after) / units; null if glucose didn't drop
+        let isf = null;
         if (glucose_before && glucose_after && insulin_units > 0) {
-            effectiveness = calculateEntryEffectiveness(glucose_before, glucose_after, insulin_units);
+            isf = calculateISF(glucose_before, glucose_after, insulin_units);
         }
 
         const logRef = db.collection('users').doc(userId).collection('logs').doc();
@@ -21,17 +22,17 @@ const createLog = async (req, res) => {
             meal_type,
             food_description,
             activity_level,
-            effectiveness,
+            isf,
             timestamp: new Date().toISOString()
         };
 
         await logRef.set(logData);
 
-        if (effectiveness !== null) {
+        if (isf !== null) {
             await reCalculateUserStats(userId);
         }
 
-        res.status(201).json({ message: 'Log created successfully', effectiveness });
+        res.status(201).json({ message: 'Log created successfully', isf });
     } catch (error) {
         console.error('Create log error:', error);
         res.status(500).json({ error: error.message });
@@ -43,14 +44,20 @@ const getLogs = async (req, res) => {
     try {
         const snapshot = await db.collection('users').doc(userId).collection('logs')
             .orderBy('timestamp', 'desc').get();
-        
+
         const logs = snapshot.docs.map(doc => {
             const data = doc.data();
-            if (data.effectiveness !== null && data.effectiveness <= 0) {
-                data.effectiveness = null;
+            // Filter out any stale negative ISF stored from old calculation logic
+            if (data.isf !== null && data.isf !== undefined && data.isf <= 0) {
+                data.isf = null;
+            }
+            // Backwards compat: rename old 'effectiveness' field to 'isf' for display
+            if (data.effectiveness !== undefined && data.isf === undefined) {
+                data.isf = (data.effectiveness > 0) ? data.effectiveness : null;
             }
             return data;
         });
+
         res.json(logs);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -84,23 +91,35 @@ const getDashboardStats = async (req, res) => {
         const data = userDoc.data();
         const logsSnapshot = await db.collection('users').doc(userId).collection('logs')
             .orderBy('timestamp', 'desc').limit(10).get();
-        
-        const recentLogsRaw = logsSnapshot.docs.map(doc => doc.data());
-        const recentLogs = recentLogsRaw.map(data => {
-            if (data.effectiveness !== null && data.effectiveness <= 0) {
-                data.effectiveness = null;
+
+        const recentLogs = logsSnapshot.docs.map(doc => {
+            const logData = doc.data();
+            // Clean negative ISF values and handle backwards compat
+            if (logData.isf !== null && logData.isf !== undefined && logData.isf <= 0) {
+                logData.isf = null;
             }
-            return data;
+            if (logData.effectiveness !== undefined && logData.isf === undefined) {
+                logData.isf = (logData.effectiveness > 0) ? logData.effectiveness : null;
+            }
+            return logData;
         });
-        
-        // Calculate risk
+
+        // Calculate risk based on recent glucose readings
         let risk = 'Low';
         const highLogs = recentLogs.filter(l => l.glucose_before > 200).length;
         if (highLogs > 5) risk = 'High';
         else if (highLogs > 2) risk = 'Medium';
 
+        // Backwards compat for stats: support both avg_isf and legacy avg_effectiveness
+        const rawStats = data.stats || {};
+        const stats = {
+            avg_isf: rawStats.avg_isf || (rawStats.avg_effectiveness > 0 ? rawStats.avg_effectiveness : 0),
+            confidence_score: rawStats.confidence_score || 'Low',
+            total_logs: rawStats.total_logs || 0
+        };
+
         res.json({
-            stats: data.stats || { avg_effectiveness: 0, confidence_score: 'Low', total_logs: 0 },
+            stats,
             health: data.health || null,
             lifestyle: data.lifestyle || { activity_level: 'None' },
             recentLogs: recentLogs.reverse(),
@@ -124,17 +143,17 @@ const updateLog = async (req, res) => {
             return res.status(404).json({ error: 'Log not found' });
         }
 
-        let effectiveness = null;
+        let isf = null;
         if (glucose_before && glucose_after && insulin_units > 0) {
-            effectiveness = calculateEntryEffectiveness(glucose_before, glucose_after, insulin_units);
+            isf = calculateISF(glucose_before, glucose_after, insulin_units);
         }
 
         await logRef.update({
-            glucose_before, glucose_after, insulin_units, meal_type, food_description, activity_level, effectiveness
+            glucose_before, glucose_after, insulin_units, meal_type, food_description, activity_level, isf
         });
 
         await reCalculateUserStats(userId);
-        res.json({ message: 'Log updated successfully', effectiveness });
+        res.json({ message: 'Log updated successfully', isf });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

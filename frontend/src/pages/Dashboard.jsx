@@ -151,7 +151,7 @@ const Dashboard = ({ user, setUser }) => {
                 </>
               )}
               <p style={{ fontSize: '0.8rem', marginTop: '10px', color: 'var(--text-dim)', fontStyle: 'italic' }}>
-                {suggestion.reason || `Based on target 120 and your effectiveness (${suggestion.effectiveness} mg/dL drop per unit)`}
+                {suggestion.reason || `Based on target 120 and your ISF (${suggestion.isf} mg/dL drop per unit)`}
               </p>
             </div>
           )}
@@ -164,8 +164,8 @@ const Dashboard = ({ user, setUser }) => {
           </h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
             <div style={{ padding: '15px', background: 'hsla(222, 47%, 5%, 0.3)', borderRadius: 'var(--radius)' }}>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>Avg Effectiveness</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: '700' }}>{stats.avg_effectiveness > 0 ? stats.avg_effectiveness.toFixed(2) : '--'}</div>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>Personal ISF</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: '700' }}>{stats.avg_isf > 0 ? stats.avg_isf.toFixed(2) : '--'}</div>
               <div style={{ fontSize: '0.7rem' }}>mg/dL drop per unit</div>
             </div>
             <div style={{ padding: '15px', background: 'hsla(222, 47%, 5%, 0.3)', borderRadius: 'var(--radius)' }}>
@@ -183,7 +183,7 @@ const Dashboard = ({ user, setUser }) => {
           
           <div style={{ marginTop: '20px', padding: '10px', borderLeft: '3px solid var(--primary)', background: 'hsla(0,0%,100%,0.03)', fontSize: '0.8rem' }}>
             <Info size={14} style={{ marginRight: '5px', verticalAlign: 'middle' }} />
-            Current Effectiveness is weighted towards recent data.
+            Current ISF is weighted towards recent data.
           </div>
         </div>
 

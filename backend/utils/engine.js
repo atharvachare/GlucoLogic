@@ -1,60 +1,65 @@
 const { db } = require('../firebase');
 
 /**
- * Calculates effectiveness for a single log entry.
+ * Calculates Insulin Sensitivity Factor (ISF) for a single log entry.
+ * Formula: ISF = (before_glucose - after_glucose) / insulin_units
+ * Returns null if glucose did not drop (meal spike or other factors).
  */
-const calculateEntryEffectiveness = (before, after, units) => {
+const calculateISF = (before, after, units) => {
     if (!units || units <= 0) return null;
     const drop = before - after;
-    // If glucose increased or stayed same, we can't learn insulin effectiveness from this log
-    // (Likely due to meal impact or other factors)
+    // Only compute ISF when glucose actually dropped — a rise means meal/other factors dominated
     return drop > 0 ? drop / units : null;
 };
 
 /**
- * Re-calculates global user stats based on history in Firestore.
+ * Re-calculates global user stats (avg ISF) based on history in Firestore.
+ * Uses a weighted average — recent 10 logs are counted double (2x weight).
  */
 const reCalculateUserStats = async (userId) => {
     const logsSnapshot = await db.collection('users').doc(userId).collection('logs')
-        .where('effectiveness', '>', 0)
-        .orderBy('effectiveness') // Required for inequality filters in some cases
+        .where('isf', '>', 0)
+        .orderBy('isf') // Required by Firestore for inequality filter
         .orderBy('timestamp', 'desc')
         .limit(50)
         .get();
-    
+
     const logs = logsSnapshot.docs.map(doc => doc.data());
-    
+
     if (logs.length === 0) return;
 
-    let totalWeightedEffectiveness = 0;
+    let totalWeightedISF = 0;
     let totalWeight = 0;
 
     logs.forEach((log, index) => {
+        // Recent 10 logs are weighted 2x to emphasise current body response
         const weight = index < 10 ? 2 : 1;
-        totalWeightedEffectiveness += log.effectiveness * weight;
+        totalWeightedISF += log.isf * weight;
         totalWeight += weight;
     });
 
-    const avgEffectiveness = totalWeightedEffectiveness / totalWeight;
-    
+    const avgISF = totalWeightedISF / totalWeight;
+
     let confidence = 'Low';
     if (logs.length >= 30) confidence = 'High';
     else if (logs.length >= 10) confidence = 'Medium';
 
     const stats = {
-        avg_effectiveness: avgEffectiveness,
+        avg_isf: avgISF,
         confidence_score: confidence,
         total_logs: logs.length,
         last_updated: new Date().toISOString()
     };
 
     await db.collection('users').doc(userId).update({ stats });
-    
-    return { avgEffectiveness, confidence, count: logs.length };
+
+    return { avgISF, confidence, count: logs.length };
 };
 
 /**
- * Provides an enhanced insulin suggestion using Firestore data.
+ * Provides an insulin dose suggestion using the ISF.
+ * Formula: Suggested Units = (Current Glucose - Target) / ISF
+ * Falls back to 1700 Rule (weight-based) if no personal ISF data exists.
  */
 const getInsulinSuggestion = async (userId, currentGlucose) => {
     const userDoc = await db.collection('users').doc(userId).get();
@@ -69,27 +74,38 @@ const getInsulinSuggestion = async (userId, currentGlucose) => {
     const targetMax = health.target_glucose_max || 140;
     const targetMid = (targetMin + targetMax) / 2;
 
-    // Safety checks
+    // —— Safety checks ——
     if (currentGlucose < 70) {
-        return { suggestion: 0, alert: 'LOW SUGAR ALERT!', risk: 'High', reason: 'Critical hypoglycemia. Do not take insulin. Consume 15g fast-acting sugar immediately.' };
+        return {
+            suggestion: 0,
+            alert: 'LOW SUGAR ALERT!',
+            risk: 'High',
+            reason: 'Critical hypoglycemia. Do not take insulin. Consume 15g fast-acting sugar immediately.'
+        };
     }
     if (currentGlucose < targetMin) {
         return { suggestion: 0, reason: `Glucose is below your target minimum (${targetMin}). No insulin needed.` };
     }
 
-    let effectiveness = stats.avg_effectiveness;
+    // —— ISF: personalised or fallback ——
+    let isf = stats.avg_isf;
+    let isfSource = 'Personal';
 
-    // If no data, use a rough weight-based estimate
-    if (!effectiveness || effectiveness <= 0) {
+    if (!isf || isf <= 0) {
+        // 1700 Rule: ISF ≈ 1700 / Total Daily Dose (TDD)
+        // TDD is estimated as weight(kg) × 0.5
         const weight = health.weight || 70;
         const estimatedTDD = weight * 0.5;
-        effectiveness = 1700 / estimatedTDD;
+        isf = 1700 / estimatedTDD;
+        isfSource = 'Estimated (1700 Rule)';
     }
 
+    // —— Core formula ——
+    // Units = (Current Glucose - Target) / ISF
     const dropNeeded = currentGlucose - targetMid;
-    let suggestedUnits = dropNeeded / effectiveness;
+    let suggestedUnits = dropNeeded / isf;
 
-    // Activity adjustments
+    // —— Activity level adjustments ——
     let adjustmentMsg = '';
     const activity = lifestyle.activity_level || 'None';
     if (activity === 'Heavy') {
@@ -100,6 +116,7 @@ const getInsulinSuggestion = async (userId, currentGlucose) => {
         adjustmentMsg = 'Reduced by 10% due to Moderate Activity level.';
     }
 
+    // —— Safety cap ——
     const cap = 20;
     const finalSuggestion = Math.min(suggestedUnits, cap);
 
@@ -107,15 +124,16 @@ const getInsulinSuggestion = async (userId, currentGlucose) => {
         suggestion: parseFloat(finalSuggestion.toFixed(1)),
         isCapped: suggestedUnits > cap,
         target: targetMid,
-        effectiveness: effectiveness.toFixed(2),
-        confidence: stats.confidence_score || 'Estimated (Weight-based)',
+        isf: parseFloat(isf.toFixed(2)),
+        isfSource,
+        confidence: stats.confidence_score || 'Not enough data',
         adjustment: adjustmentMsg,
         risk: currentGlucose > 250 ? 'High' : (currentGlucose > 180 ? 'Medium' : 'Low')
     };
 };
 
 module.exports = {
-    calculateEntryEffectiveness,
+    calculateISF,
     reCalculateUserStats,
     getInsulinSuggestion
 };

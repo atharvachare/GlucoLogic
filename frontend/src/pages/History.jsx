@@ -126,7 +126,7 @@ const History = () => {
                   <th style={{ padding: '15px' }}>Insulin</th>
                   <th style={{ padding: '15px' }}>Meal & Food</th>
                   <th style={{ padding: '15px' }}>Glucose (Post)</th>
-                  <th style={{ padding: '15px' }}>Effectiveness</th>
+                  <th style={{ padding: '15px' }}>ISF (drop/U)</th>
                   <th style={{ padding: '15px', textAlign: 'center' }}>Actions</th>
                 </tr>
               </thead>
@@ -164,11 +164,15 @@ const History = () => {
                       ) : '--'}
                     </td>
                     <td style={{ padding: '15px' }}>
-                      {log.effectiveness > 0 ? (
-                        <div className="text-success" style={{ fontWeight: '600' }}>
-                          {log.effectiveness.toFixed(1)} <span style={{ fontSize: '0.7rem' }}>drop/U</span>
-                        </div>
-                      ) : '--'}
+                      {(() => {
+                        // Support both new 'isf' field and old 'effectiveness' field
+                        const isfVal = log.isf > 0 ? log.isf : (log.effectiveness > 0 ? log.effectiveness : null);
+                        return isfVal ? (
+                          <div className="text-success" style={{ fontWeight: '600' }}>
+                            {isfVal.toFixed(1)} <span style={{ fontSize: '0.7rem' }}>drop/U</span>
+                          </div>
+                        ) : '--';
+                      })()}
                     </td>
                     <td style={{ padding: '15px', textAlign: 'center' }}>
                       <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
