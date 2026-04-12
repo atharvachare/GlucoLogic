@@ -44,7 +44,13 @@ const getLogs = async (req, res) => {
         const snapshot = await db.collection('users').doc(userId).collection('logs')
             .orderBy('timestamp', 'desc').get();
         
-        const logs = snapshot.docs.map(doc => doc.data());
+        const logs = snapshot.docs.map(doc => {
+            const data = doc.data();
+            if (data.effectiveness !== null && data.effectiveness <= 0) {
+                data.effectiveness = null;
+            }
+            return data;
+        });
         res.json(logs);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -79,7 +85,13 @@ const getDashboardStats = async (req, res) => {
         const logsSnapshot = await db.collection('users').doc(userId).collection('logs')
             .orderBy('timestamp', 'desc').limit(10).get();
         
-        const recentLogs = logsSnapshot.docs.map(doc => doc.data());
+        const recentLogsRaw = logsSnapshot.docs.map(doc => doc.data());
+        const recentLogs = recentLogsRaw.map(data => {
+            if (data.effectiveness !== null && data.effectiveness <= 0) {
+                data.effectiveness = null;
+            }
+            return data;
+        });
         
         // Calculate risk
         let risk = 'Low';
