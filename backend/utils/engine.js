@@ -17,14 +17,22 @@ const calculateISF = (before, after, units) => {
  * Uses a weighted average — recent 10 logs are counted double (2x weight).
  */
 const reCalculateUserStats = async (userId) => {
+    // Fetch recent logs ordered by time, then filter for valid ISF in memory
+    // (Avoids need for Firestore composite index on isf + timestamp)
     const logsSnapshot = await db.collection('users').doc(userId).collection('logs')
-        .where('isf', '>', 0)
-        .orderBy('isf') // Required by Firestore for inequality filter
         .orderBy('timestamp', 'desc')
-        .limit(50)
+        .limit(100)
         .get();
 
-    const logs = logsSnapshot.docs.map(doc => doc.data());
+    // Filter to only logs with a valid positive ISF
+    const allLogs = logsSnapshot.docs.map(doc => doc.data());
+    const logs = allLogs
+        .filter(log => {
+            // Support both new 'isf' field and old 'effectiveness' field
+            const isf = log.isf !== undefined ? log.isf : log.effectiveness;
+            return isf !== null && isf !== undefined && isf > 0;
+        })
+        .slice(0, 50); // Limit to 50 for weighted average
 
     if (logs.length === 0) return;
 
@@ -34,7 +42,9 @@ const reCalculateUserStats = async (userId) => {
     logs.forEach((log, index) => {
         // Recent 10 logs are weighted 2x to emphasise current body response
         const weight = index < 10 ? 2 : 1;
-        totalWeightedISF += log.isf * weight;
+        // Support both new 'isf' field and old 'effectiveness' field
+        const isfVal = log.isf !== undefined && log.isf !== null ? log.isf : log.effectiveness;
+        totalWeightedISF += isfVal * weight;
         totalWeight += weight;
     });
 
