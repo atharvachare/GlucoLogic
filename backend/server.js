@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const functions = require('firebase-functions');
 const authMiddleware = require('./middlewares/auth');
 
 dotenv.config();
@@ -14,7 +13,6 @@ app.use(express.json());
 
 // Import controllers
 const authController = require('./controllers/authController');
-const logController = require('./controllers/logController');
 const { createLog, getLogs, getSuggestion, getDashboardStats, updateLog, deleteLog, migrateISF } = require('./controllers/logController');
 const profileRoutes = require('./routes/profile');
 
@@ -26,14 +24,14 @@ app.put('/api/auth/profile', authMiddleware, authController.updateProfile);
 // Profile Routes
 app.use('/api/profile', profileRoutes);
 
-// Log Routes
-app.post('/api/logs', authMiddleware, logController.createLog);
-app.get('/api/logs', authMiddleware, logController.getLogs);
-app.put('/api/logs/:id', authMiddleware, logController.updateLog);
-app.delete('/api/logs/:id', authMiddleware, logController.deleteLog);
-app.get('/api/suggestions', authMiddleware, logController.getSuggestion);
-app.get('/api/dashboard', authMiddleware, logController.getDashboardStats);
-app.post('/api/logs/migrate-isf', authMiddleware, migrateISF);
+// Log Routes — IMPORTANT: specific routes must come before wildcard /:id routes
+app.post('/api/logs/migrate-isf', authMiddleware, migrateISF);  // must be before POST /api/logs/:id
+app.post('/api/logs', authMiddleware, createLog);
+app.get('/api/logs', authMiddleware, getLogs);
+app.put('/api/logs/:id', authMiddleware, updateLog);
+app.delete('/api/logs/:id', authMiddleware, deleteLog);
+app.get('/api/suggestions', authMiddleware, getSuggestion);
+app.get('/api/dashboard', authMiddleware, getDashboardStats);
 
 // Start server
 app.listen(PORT, () => {
