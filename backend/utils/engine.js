@@ -4,9 +4,11 @@ const { db } = require('../firebase');
  * Calculates effectiveness for a single log entry.
  */
 const calculateEntryEffectiveness = (before, after, units) => {
-    if (!units || units <= 0) return 0;
+    if (!units || units <= 0) return null;
     const drop = before - after;
-    return drop / units;
+    // If glucose increased or stayed same, we can't learn insulin effectiveness from this log
+    // (Likely due to meal impact or other factors)
+    return drop > 0 ? drop / units : null;
 };
 
 /**
@@ -14,8 +16,8 @@ const calculateEntryEffectiveness = (before, after, units) => {
  */
 const reCalculateUserStats = async (userId) => {
     const logsSnapshot = await db.collection('users').doc(userId).collection('logs')
-        .where('effectiveness', '!=', null)
-        .orderBy('effectiveness') // Required for inequality filters in some cases, but for us we just need effectiveness != null
+        .where('effectiveness', '>', 0)
+        .orderBy('effectiveness') // Required for inequality filters in some cases
         .orderBy('timestamp', 'desc')
         .limit(50)
         .get();

@@ -164,7 +164,7 @@ const History = () => {
                       ) : '--'}
                     </td>
                     <td style={{ padding: '15px' }}>
-                      {log.effectiveness ? (
+                      {log.effectiveness > 0 ? (
                         <div className="text-success" style={{ fontWeight: '600' }}>
                           {log.effectiveness.toFixed(1)} <span style={{ fontSize: '0.7rem' }}>drop/U</span>
                         </div>
