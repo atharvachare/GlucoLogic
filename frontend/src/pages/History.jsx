@@ -127,7 +127,7 @@ const History = () => {
                   <th style={{ padding: '15px' }}>Insulin</th>
                   <th style={{ padding: '15px' }}>Meal & Food</th>
                   <th style={{ padding: '15px' }}>Glucose (Post)</th>
-                  <th style={{ padding: '15px' }}>ISF (drop/U)</th>
+                  <th style={{ padding: '15px' }}>Clinical Analysis</th>
                   <th style={{ padding: '15px', textAlign: 'center' }}>Actions</th>
                 </tr>
               </thead>

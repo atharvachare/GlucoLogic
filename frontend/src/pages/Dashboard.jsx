@@ -280,8 +280,12 @@ const Dashboard = ({ user, setUser }) => {
               </div>
               <div style={{ padding: '15px', background: 'hsla(222, 47%, 5%, 0.3)', borderRadius: 'var(--radius)' }}>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Carb Ratio (CIR)</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: '700' }}>1:{stats.avg_cir > 0 ? stats.avg_cir.toFixed(1) : '--'}</div>
-                <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)' }}>grams per unit</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: '700' }}>
+                  1:{stats.avg_cir > 0 ? stats.avg_cir.toFixed(1) : '15.0'}
+                </div>
+                <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)' }}>
+                  {stats.avg_cir > 0 ? 'grams per unit' : 'grams (Default)'}
+                </div>
               </div>
             </div>
 
