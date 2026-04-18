@@ -44,8 +44,6 @@ const Dashboard = ({ user, setUser }) => {
   }, []);
 
   const fetchDashboardData = async () => {
-    // ... rest of fetchDashboardData ...
-
     try {
       const resp = await api.get('/dashboard');
       setStats(resp.data.stats);
@@ -66,7 +64,7 @@ const Dashboard = ({ user, setUser }) => {
     if (!currentGlucose) return;
     setLoadingSuggestion(true);
     try {
-      const resp = await api.get(`/suggestions?current_glucose=${currentGlucose}`);
+      const resp = await api.get(`/suggestions?current_glucose=${currentGlucose}&carbs=${currentCarbs || 0}`);
       setSuggestion(resp.data);
     } catch (err) {
       console.error('Failed to get suggestion', err);
@@ -131,19 +129,28 @@ const Dashboard = ({ user, setUser }) => {
         {/* Suggestion Card */}
         <div className="glass-card" style={{ padding: '25px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <BrainCircuit className="text-primary" /> Insulin Suggestion
+            <BrainCircuit className="text-primary" /> Multi-Dose Suggestion
           </h3>
           
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <input 
-              type="number" 
-              className="input-field" 
-              placeholder="Current Glucose" 
-              value={currentGlucose}
-              onChange={(e) => setCurrentGlucose(e.target.value)}
-            />
-            <button className="btn btn-primary" onClick={handleGetSuggestion} disabled={loadingSuggestion}>
-              {loadingSuggestion ? '...' : 'Suggest'}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <input 
+                type="number" 
+                className="input-field" 
+                placeholder="Glucose (mg/dL)" 
+                value={currentGlucose}
+                onChange={(e) => setCurrentGlucose(e.target.value)}
+              />
+              <input 
+                type="number" 
+                className="input-field" 
+                placeholder="Carbs (grams)" 
+                value={currentCarbs}
+                onChange={(e) => setCurrentCarbs(e.target.value)}
+              />
+            </div>
+            <button className="btn btn-primary" onClick={handleGetSuggestion} disabled={loadingSuggestion} style={{ width: '100%', justifyContent: 'center' }}>
+              {loadingSuggestion ? 'Thinking...' : 'Calculate Safe Dose'}
             </button>
           </div>
 
@@ -155,12 +162,23 @@ const Dashboard = ({ user, setUser }) => {
                 </div>
               ) : (
                 <>
-                  <div style={{ fontSize: '0.9rem', color: 'var(--text-dim)', marginBottom: '5px' }}>Suggested Dose:</div>
-                  <div style={{ fontSize: '2.5rem', fontWeight: '800', fontFamily: 'Outfit' }}>
+                  <div style={{ fontSize: '0.9rem', color: 'var(--text-dim)', marginBottom: '5px' }}>Total Suggested Dose:</div>
+                  <div style={{ fontSize: '2.5rem', fontWeight: '800', fontFamily: 'Outfit', display: 'flex', alignItems: 'baseline', gap: '10px' }}>
                     {suggestion.suggestion} <span style={{ fontSize: '1rem', fontWeight: '400' }}>Units</span>
                   </div>
+                  
+                  {/* Detailed Breakdown */}
+                  <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px solid hsla(0,0%,100%,0.1)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '0.8rem' }}>
+                    <div>
+                      <span className="text-dim">Correction:</span> {suggestion.doses?.netCorrection} U
+                    </div>
+                    <div>
+                      <span className="text-dim">Meal Dose:</span> {suggestion.doses?.meal} U
+                    </div>
+                  </div>
+
                   {suggestion.iob > 0 && (
-                    <div style={{ fontSize: '0.85rem', color: 'var(--warning)', marginTop: '5px', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: '600' }}>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--warning)', marginTop: '8px', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: '600' }}>
                       <ActivityIcon size={14} /> IOB: {suggestion.iob} units active
                     </div>
                   )}
@@ -170,7 +188,7 @@ const Dashboard = ({ user, setUser }) => {
                 {suggestion.iobAdjustment && <span>• {suggestion.iobAdjustment}</span>}
                 {suggestion.activityAdjustment && <span>• {suggestion.activityAdjustment}</span>}
                 {!suggestion.iobAdjustment && !suggestion.activityAdjustment && (
-                  <span>{suggestion.reason || `Based on target ${suggestion.target} and your ISF (${suggestion.isf})`}</span>
+                  <span>{suggestion.reason || `Using CIR ${suggestion.cir} and ISF ${suggestion.isf}`}</span>
                 )}
               </div>
             </div>

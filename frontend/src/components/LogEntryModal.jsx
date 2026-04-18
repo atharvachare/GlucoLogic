@@ -2,15 +2,24 @@ import { useState, useEffect } from 'react';
 import api from '../api';
 import { X, Send, Utensils, Activity, Droplets, BookOpen, Edit3 } from 'lucide-react';
 
+const PORTION_DATA = [
+  { id: 'roti', label: '🫓 Roti', grams: 20 },
+  { id: 'rice', label: '🍚 Rice Bowl', grams: 45 },
+  { id: 'dal', label: '🥣 Dal Bowl', grams: 15 },
+  { id: 'milk', label: '🥛 Milk', grams: 12 },
+];
+
 const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
   const [formData, setFormData] = useState({
     glucose_before: '',
     glucose_after: '',
     insulin_units: '',
+    carbs: 0,
     meal_type: 'breakfast',
     food_description: '',
     activity_level: 'none'
   });
+  const [portions, setPortions] = useState({ roti: 0, rice: 0, dal: 0, milk: 0 });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -19,6 +28,7 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
         glucose_before: editData.glucose_before || '',
         glucose_after: editData.glucose_after || '',
         insulin_units: editData.insulin_units || '',
+        carbs: editData.carbs || 0,
         meal_type: editData.meal_type || 'breakfast',
         food_description: editData.food_description || '',
         activity_level: editData.activity_level || 'none'
@@ -28,14 +38,23 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
         glucose_before: '',
         glucose_after: '',
         insulin_units: '',
+        carbs: 0,
         meal_type: 'breakfast',
         food_description: '',
         activity_level: 'none'
       });
+      setPortions({ roti: 0, rice: 0, dal: 0, milk: 0 });
     }
   }, [editData, isOpen]);
 
-  if (!isOpen) return null;
+  const updatePortion = (id, delta) => {
+    const newPortions = { ...portions, [id]: Math.max(0, portions[id] + delta) };
+    setPortions(newPortions);
+    
+    // Auto-calculate total carbs
+    const totalCarbs = PORTION_DATA.reduce((sum, item) => sum + (newPortions[item.id] * item.grams), 0);
+    setFormData(prev => ({ ...prev, carbs: totalCarbs }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -46,6 +65,7 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
         glucose_before: formData.glucose_before ? parseFloat(formData.glucose_before) : null,
         glucose_after: formData.glucose_after ? parseFloat(formData.glucose_after) : null,
         insulin_units: formData.insulin_units ? parseFloat(formData.insulin_units) : 0,
+        carbs: parseFloat(formData.carbs) || 0,
       };
 
       if (editData) {
@@ -53,16 +73,15 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
       } else {
         await api.post('/logs', payload);
         
-        // Schedule reminder for 2 hours later if insulin was taken but no after-sugar provided
+        // Schedule reminder for 2 hours later...
         if (payload.insulin_units > 0 && !payload.glucose_after) {
           if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
             navigator.serviceWorker.controller.postMessage({
               type: 'SCHEDULE_NOTIFICATION',
-              delay: 2 * 60 * 60 * 1000, // 2 hours in ms
+              delay: 2 * 60 * 60 * 1000,
               title: 'Check your sugar!',
               body: `It's been 2 hours since your ${formData.meal_type}. Check your glucose to help me learn!`
             });
-            console.log('Reminder scheduled for 2 hours.');
           }
         }
       }
@@ -75,6 +94,8 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
       setLoading(false);
     }
   };
+
+  if (!isOpen) return null;
 
   return (
     <div style={{
@@ -93,6 +114,39 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
         </h2>
 
         <form onSubmit={handleSubmit}>
+          {/* Indian Portion Selector */}
+          <div style={{ marginBottom: '25px', padding: '15px', background: 'hsla(0,0%,100%,0.03)', borderRadius: 'var(--radius)', border: '1px dashed hsla(0,0%,100%,0.1)' }}>
+            <label style={{ display: 'block', marginBottom: '15px', fontSize: '0.95rem', fontWeight: 'bold', color: 'var(--primary)' }}>
+              Quick Indian Portion Picker (Auto-calculates Carbs)
+            </label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              {PORTION_DATA.map(item => (
+                <div key={item.id} style={{ 
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+                  padding: '10px', background: 'hsla(0,0%,100%,0.05)', borderRadius: '12px' 
+                }}>
+                  <span style={{ fontSize: '0.9rem' }}>{item.label}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <button type="button" onClick={() => updatePortion(item.id, -1)} style={{ width: '28px', height: '28px', borderRadius: '50%', border: 'none', background: 'hsla(0,0%,100%,0.1)', color: 'white' }}>-</button>
+                    <span style={{ minWidth: '15px', textAlign: 'center', fontWeight: 'bold' }}>{portions[item.id]}</span>
+                    <button type="button" onClick={() => updatePortion(item.id, 1)} style={{ width: '28px', height: '28px', borderRadius: '50%', border: 'none', background: 'var(--primary)', color: 'white' }}>+</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <div style={{ marginTop: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span className="text-dim">Estimated Carbs:</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <input 
+                  type="number" className="input-field" style={{ width: '100px', textAlign: 'center', fontWeight: 'bold' }} 
+                  value={formData.carbs} onChange={(e) => setFormData({...formData, carbs: e.target.value})}
+                />
+                <span style={{ fontWeight: 'bold', color: 'var(--primary)' }}>grams</span>
+              </div>
+            </div>
+          </div>
+
           <div className="res-grid" style={{ marginBottom: '15px' }}>
             <div>
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>Glucose (Before Meal)</label>

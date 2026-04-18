@@ -67,11 +67,11 @@ const reCalculateUserStats = async (userId) => {
 };
 
 /**
- * Provides an insulin dose suggestion using the ISF and taking into account IOB.
- * Formula: Suggested Units = ((Current Glucose - Target) / ISF) - IOB
- * Falls back to 1700 Rule (weight-based) if no personal ISF data exists.
+ * Provides an insulin dose suggestion using ISF, IOB, and Carbohydrate intake.
+ * Formula: Suggested Units = ((Current Glucose - Target) / ISF - IOB) + (Carbs / CIR)
+ * Falls back to 1700 Rule for ISF and 1:15 for CIR if no personal data exists.
  */
-const getInsulinSuggestion = async (userId, currentGlucose) => {
+const getInsulinSuggestion = async (userId, currentGlucose, carbs = 0) => {
     const userDoc = await db.collection('users').doc(userId).get();
     if (!userDoc.exists) return { suggestion: 0, reason: 'User not found' };
 
@@ -85,7 +85,6 @@ const getInsulinSuggestion = async (userId, currentGlucose) => {
     const targetMid = (targetMin + targetMax) / 2;
 
     // —— 1. FETCH IOB (Insulin on Board) ——
-    // Look at logs from last 4 hours (240 mins)
     const fourHoursAgo = new Date();
     fourHoursAgo.setHours(fourHoursAgo.getHours() - 4);
     
@@ -101,8 +100,6 @@ const getInsulinSuggestion = async (userId, currentGlucose) => {
             const logTime = new Date(log.timestamp);
             const hoursPassed = (now - logTime) / (1000 * 60 * 60);
             if (hoursPassed < 4) {
-                // Linear decay model: 100% active at 0h, 0% active at 4h
-                // Note: Real world uses curvilinear models, but linear is a safe, clear v1.
                 const percentActive = 1 - (hoursPassed / 4);
                 iob += log.insulin_units * percentActive;
             }
@@ -119,61 +116,71 @@ const getInsulinSuggestion = async (userId, currentGlucose) => {
             reason: 'Critical hypoglycemia. Do not take insulin. Consume 15g fast-acting sugar immediately.'
         };
     }
-    if (currentGlucose < targetMin) {
-        return { 
-            suggestion: 0, 
-            iob: parseFloat(iob.toFixed(1)),
-            reason: `Glucose is below your target minimum (${targetMin}). No insulin needed.` 
-        };
-    }
 
-    // —— 3. ISF: personalised or fallback ——
+    // —— 3. ISF & CIR (Learning or Fallback) ——
     let isf = stats.avg_isf;
     let isfSource = 'Personal';
-
     if (!isf || isf <= 0) {
-        // 1700 Rule: ISF ≈ 1700 / Total Daily Dose (TDD)
         const weight = health.weight || 70;
         const estimatedTDD = weight * 0.5;
         isf = 1700 / estimatedTDD;
         isfSource = 'Estimated (1700 Rule)';
     }
 
-    // —— 4. CORE MATH ——
-    // Raw Correction = (Current Glucose - Target) / ISF
-    const dropNeeded = currentGlucose - targetMid;
-    let suggestedUnits = dropNeeded / isf;
+    // CIR: Carb-to-Insulin Ratio (How many grams 1 unit covers)
+    // Fallback: 1:15 is standard for most adults.
+    let cir = stats.avg_cir || 15; 
+    let cirSource = stats.avg_cir ? 'Personal' : 'Default (1:15)';
+
+    // —— 4. CALCULATE DOSES ——
+    
+    // A. Correction Dose (for high sugar)
+    const dropNeeded = Math.max(0, currentGlucose - targetMid);
+    let correctionDose = dropNeeded / isf;
+
+    // B. Meal Dose (for carbohydrates)
+    let mealDose = carbs / cir;
 
     // —— 5. IOB DEDUCTION ——
-    // Prevent "Insulin Stacking" by subtracting what's already in the body
+    // Only subtract IOB from Correction Dose (don't subtract from meal dose usually)
     let iobAdjustmentMsg = '';
+    let netCorrection = correctionDose;
     if (iob > 0) {
-        iobAdjustmentMsg = `Subtracted ${iob.toFixed(1)} units of Insulin on Board (IOB) to prevent stacking.`;
-        suggestedUnits = Math.max(0, suggestedUnits - iob);
+        netCorrection = Math.max(0, correctionDose - iob);
+        iobAdjustmentMsg = `IOB of ${iob.toFixed(1)} units subtracted from correction.`;
     }
+
+    let rawSuggested = netCorrection + mealDose;
 
     // —— 6. ACTIVITY ADJUSTMENTS ——
     let activityAdjustmentMsg = '';
     const activity = lifestyle.activity_level || 'None';
     if (activity === 'Heavy') {
-        suggestedUnits *= 0.8;
+        rawSuggested *= 0.8;
         activityAdjustmentMsg = 'Reduced by 20% due to Heavy Activity level.';
     } else if (activity === 'Moderate') {
-        suggestedUnits *= 0.9;
+        rawSuggested *= 0.9;
         activityAdjustmentMsg = 'Reduced by 10% due to Moderate Activity level.';
     }
 
     // —— 7. SAFETY CAP ——
     const cap = 20;
-    const finalSuggestion = Math.min(suggestedUnits, cap);
+    const finalSuggestion = Math.min(rawSuggested, cap);
 
     return {
         suggestion: parseFloat(finalSuggestion.toFixed(1)),
-        isCapped: suggestedUnits > cap,
+        isCapped: rawSuggested > cap,
         target: targetMid,
         isf: parseFloat(isf.toFixed(2)),
         isfSource,
+        cir: cir,
+        cirSource,
         iob: parseFloat(iob.toFixed(1)),
+        doses: {
+            correction: parseFloat(correctionDose.toFixed(1)),
+            meal: parseFloat(mealDose.toFixed(1)),
+            netCorrection: parseFloat(netCorrection.toFixed(1))
+        },
         confidence: stats.confidence_score || 'Not enough data',
         iobAdjustment: iobAdjustmentMsg,
         activityAdjustment: activityAdjustmentMsg,

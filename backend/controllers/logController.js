@@ -91,14 +91,18 @@ const getLogs = async (req, res) => {
 
 const getSuggestion = async (req, res) => {
     const userId = req.user.id;
-    const { current_glucose } = req.query;
+    const { current_glucose, carbs } = req.query;
 
     if (!current_glucose) {
         return res.status(400).json({ error: 'current_glucose is required' });
     }
 
     try {
-        const suggestionData = await getInsulinSuggestion(userId, parseFloat(current_glucose));
+        const suggestionData = await getInsulinSuggestion(
+            userId, 
+            parseFloat(current_glucose), 
+            carbs ? parseFloat(carbs) : 0
+        );
         res.json(suggestionData);
     } catch (error) {
         res.status(500).json({ error: error.message });
