@@ -14,6 +14,7 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
     glucose_before: '',
     glucose_after: '',
     insulin_units: '',
+    insulin_type: 'bolus',
     carbs: 0,
     meal_type: 'breakfast',
     food_description: '',
@@ -28,6 +29,7 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
         glucose_before: editData.glucose_before || '',
         glucose_after: editData.glucose_after || '',
         insulin_units: editData.insulin_units || '',
+        insulin_type: editData.insulin_type || 'bolus',
         carbs: editData.carbs || 0,
         meal_type: editData.meal_type || 'breakfast',
         food_description: editData.food_description || '',
@@ -38,6 +40,7 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
         glucose_before: '',
         glucose_after: '',
         insulin_units: '',
+        insulin_type: 'bolus',
         carbs: 0,
         meal_type: 'breakfast',
         food_description: '',
@@ -160,10 +163,19 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
             </div>
             <div>
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>Insulin Units</label>
-              <input 
-                type="number" step="0.5" className="input-field" placeholder="Units"
-                value={formData.insulin_units} onChange={(e) => setFormData({...formData, insulin_units: e.target.value})}
-              />
+              <div style={{ display: 'flex', gap: '5px' }}>
+                <input 
+                  type="number" step="0.5" className="input-field" placeholder="Units"
+                  value={formData.insulin_units} onChange={(e) => setFormData({...formData, insulin_units: e.target.value})}
+                />
+                <select 
+                  className="input-field" style={{ width: '100px', fontSize: '0.8rem', padding: '0 8px' }}
+                  value={formData.insulin_type} onChange={(e) => setFormData({...formData, insulin_type: e.target.value})}
+                >
+                  <option value="bolus">Bolus</option>
+                  <option value="basal">Basal</option>
+                </select>
+              </div>
             </div>
           </div>
 

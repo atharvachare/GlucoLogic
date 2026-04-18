@@ -13,10 +13,56 @@ import {
   Info,
   User as UserIcon,
   Activity as ActivityIcon,
-  ShieldCheck
+  ShieldCheck,
+  AlarmClock
 } from 'lucide-react';
 import Onboarding from '../components/Onboarding';
 import { Link } from 'react-router-dom';
+
+const HypoTimer = ({ lastLogTime }) => {
+  const [timeLeft, setTimeLeft] = useState(0);
+
+  useEffect(() => {
+    const calculateTime = () => {
+      const now = new Date();
+      const logTime = new Date(lastLogTime);
+      const diffMs = now - logTime;
+      const fifteenMins = 15 * 60 * 1000;
+      const remaining = Math.max(0, fifteenMins - diffMs);
+      setTimeLeft(Math.floor(remaining / 1000));
+    };
+
+    calculateTime();
+    const interval = setInterval(calculateTime, 1000);
+    return () => clearInterval(interval);
+  }, [lastLogTime]);
+
+  if (timeLeft <= 0) {
+    return (
+      <div className="glass-card animate-pulse" style={{ padding: '20px', background: 'var(--success)', color: 'white', marginBottom: '30px', border: 'none' }}>
+        <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <AlarmClock /> 15 Minutes Up!
+        </h3>
+        <p>Please RE-CHECK your sugar now. If it is still under 80, consume another 15g of sugar.</p>
+      </div>
+    );
+  }
+
+  const mins = Math.floor(timeLeft / 60);
+  const secs = timeLeft % 60;
+
+  return (
+    <div className="glass-card" style={{ padding: '20px', background: 'var(--danger)', color: 'white', marginBottom: '30px', border: 'none' }}>
+      <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <ActivityIcon /> Hypo Recovery (15-15 Rule)
+      </h3>
+      <p style={{ marginBottom: '10px' }}>Eat 15g sugar and wait. Re-check in:</p>
+      <div style={{ fontSize: '2.5rem', fontWeight: '800', fontFamily: 'monospace' }}>
+        {mins}:{secs < 10 ? '0' : ''}{secs}
+      </div>
+    </div>
+  );
+};
 
 const Dashboard = ({ user, setUser }) => {
   const [stats, setStats] = useState({ avg_isf: 0, confidence_score: 'Low', total_logs: 0 });
@@ -111,6 +157,11 @@ const Dashboard = ({ user, setUser }) => {
             <button className="btn btn-outline" onClick={handleLogout}><LogOut size={18} /> Logout</button>
           </div>
         </header>
+
+        {/* Hypo Alert Timer */}
+        {recentLogs[0] && recentLogs[0].glucose_before < 70 && (new Date() - new Date(recentLogs[0].timestamp)) < 60 * 60 * 1000 && (
+          <HypoTimer lastLogTime={recentLogs[0].timestamp} />
+        )}
 
         {showOnboarding && <Onboarding onComplete={() => {
           setShowOnboarding(false);

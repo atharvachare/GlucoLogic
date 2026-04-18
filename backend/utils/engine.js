@@ -96,7 +96,12 @@ const getInsulinSuggestion = async (userId, currentGlucose, carbs = 0) => {
     const now = new Date();
     recentLogsSnapshot.forEach(doc => {
         const log = doc.data();
-        if (log.insulin_units > 0) {
+        
+        // IMPORTANT: Only Bolus (Rapid-Acting) insulin counts for IOB tracking.
+        // Basal (Long-Acting) provides background coverage and should NOT be subtracted from correction doses.
+        const isBolus = !log.insulin_type || log.insulin_type === 'bolus';
+        
+        if (log.insulin_units > 0 && isBolus) {
             const logTime = new Date(log.timestamp);
             const hoursPassed = (now - logTime) / (1000 * 60 * 60);
             if (hoursPassed < 4) {
