@@ -88,4 +88,25 @@ const updateProfile = async (req, res) => {
     }
 };
 
-module.exports = { register, login, updateProfile };
+const forgotPassword = async (req, res) => {
+    const { email } = req.body;
+
+    try {
+        const usersRef = db.collection('users');
+        const snapshot = await usersRef.where('email', '==', email).limit(1).get();
+
+        // Security best practice: Don't tell the user if the email is invalid
+        // Just return success so people can't "fish" for emails.
+        res.json({ message: 'If an account exists, a reset link has been sent.' });
+        
+        if (!snapshot.empty) {
+            console.log(`PASSWORD RESET REQUESTED FOR: ${email}`);
+            // TODO: Generate a reset token and send a real email here.
+        }
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+module.exports = { register, login, updateProfile, forgotPassword };

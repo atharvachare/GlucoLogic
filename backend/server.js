@@ -19,6 +19,7 @@ const profileRoutes = require('./routes/profile');
 // Auth Routes
 app.post('/api/auth/register', authController.register);
 app.post('/api/auth/login', authController.login);
+app.post('/api/auth/forgot-password', authController.forgotPassword);
 app.put('/api/auth/profile', authMiddleware, authController.updateProfile);
 
 // Profile Routes

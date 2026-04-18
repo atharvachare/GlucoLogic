@@ -69,6 +69,9 @@ const Login = ({ setUser }) => {
                 required
               />
             </div>
+            <div style={{ textAlign: 'right', marginTop: '8px' }}>
+              <Link to="/forgot-password" style={{ fontSize: '0.85rem', color: 'var(--text-dim)', textDecoration: 'none' }}>Forgot Password?</Link>
+            </div>
           </div>
 
           <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} disabled={loading}>

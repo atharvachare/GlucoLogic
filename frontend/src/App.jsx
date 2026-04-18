@@ -5,6 +5,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import History from './pages/History';
 import Profile from './pages/Profile';
+import ForgotPassword from './pages/ForgotPassword';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -24,6 +25,7 @@ function App() {
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" /> : <Login setUser={setUser} />} />
       <Route path="/register" element={user ? <Navigate to="/" /> : <Register setUser={setUser} />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/" element={user ? <Dashboard user={user} setUser={setUser} /> : <Navigate to="/login" />} />
       <Route path="/history" element={user ? <History user={user} /> : <Navigate to="/login" />} />
       <Route path="/profile" element={user ? <Profile user={user} /> : <Navigate to="/login" />} />
