@@ -140,14 +140,20 @@ const Dashboard = ({ user, setUser }) => {
                 className="input-field" 
                 placeholder="Glucose (mg/dL)" 
                 value={currentGlucose}
-                onChange={(e) => setCurrentGlucose(e.target.value)}
+                onChange={(e) => {
+                  setCurrentGlucose(e.target.value);
+                  setSuggestion(null);
+                }}
               />
               <input 
                 type="number" 
                 className="input-field" 
                 placeholder="Carbs (grams)" 
                 value={currentCarbs}
-                onChange={(e) => setCurrentCarbs(e.target.value)}
+                onChange={(e) => {
+                  setCurrentCarbs(e.target.value);
+                  setSuggestion(null);
+                }}
               />
             </div>
             <button className="btn btn-primary" onClick={handleGetSuggestion} disabled={loadingSuggestion} style={{ width: '100%', justifyContent: 'center' }}>

@@ -91,20 +91,24 @@ const getLogs = async (req, res) => {
 
 const getSuggestion = async (req, res) => {
     const userId = req.user.id;
-    const { current_glucose, carbs } = req.query;
+    // Extract with fallback to ensure no undefined values
+    const queryGlucose = req.query.current_glucose;
+    const queryCarbs = req.query.carbs;
 
-    if (!current_glucose) {
+    if (!queryGlucose) {
         return res.status(400).json({ error: 'current_glucose is required' });
     }
 
     try {
-        const suggestionData = await getInsulinSuggestion(
-            userId, 
-            parseFloat(current_glucose), 
-            carbs ? parseFloat(carbs) : 0
-        );
+        const glucoseNum = parseFloat(queryGlucose);
+        const carbsNum = parseFloat(queryCarbs) || 0;
+
+        console.log(`[SuggestionRequest] User: ${userId}, Glucose: ${glucoseNum}, Carbs: ${carbsNum}`);
+
+        const suggestionData = await getInsulinSuggestion(userId, glucoseNum, carbsNum);
         res.json(suggestionData);
     } catch (error) {
+        console.error('Suggestion Error:', error);
         res.status(500).json({ error: error.message });
     }
 };
