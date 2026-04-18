@@ -214,42 +214,54 @@ const Dashboard = ({ user, setUser }) => {
           </div>
 
           {suggestion && (
-            <div className="animate-fade-in" style={{ padding: '15px', borderRadius: 'var(--radius)', background: 'hsla(210, 100%, 50%, 0.1)', border: '1px solid hsla(210, 100%, 50%, 0.2)' }}>
+            <div className="animate-fade-in" style={{ padding: '20px', borderRadius: 'var(--radius)', background: 'hsla(210, 100%, 50%, 0.15)', border: '1px solid hsla(210, 100%, 50%, 0.3)' }}>
               {suggestion.alert ? (
                 <div style={{ color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>
                   <AlertTriangle size={20} /> {suggestion.alert}
                 </div>
               ) : (
                 <>
-                  <div style={{ fontSize: '0.9rem', color: 'var(--text-dim)', marginBottom: '5px' }}>Total Suggested Dose:</div>
-                  <div style={{ fontSize: '2.5rem', fontWeight: '800', fontFamily: 'Outfit', display: 'flex', alignItems: 'baseline', gap: '10px' }}>
-                    {suggestion.suggestion} <span style={{ fontSize: '1rem', fontWeight: '400' }}>Units</span>
-                  </div>
-                  
-                  {/* Detailed Breakdown */}
-                  <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px solid hsla(0,0%,100%,0.1)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '0.8rem' }}>
-                    <div>
-                      <span className="text-dim">Correction:</span> {suggestion.doses?.netCorrection} U
-                    </div>
-                    <div>
-                      <span className="text-dim">Meal Dose:</span> {suggestion.doses?.meal} U
+                  <div style={{ marginBottom: '20px' }}>
+                    <div style={{ fontSize: '0.9rem', color: 'var(--text-dim)', marginBottom: '5px' }}>Total Suggested Dose:</div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                      <span style={{ fontSize: '3.5rem', fontWeight: '800', lineHeight: '1' }}>{suggestion.suggestion}</span>
+                      <span style={{ fontSize: '1.2rem', color: 'var(--text-dim)' }}>Units</span>
                     </div>
                   </div>
 
-                  {suggestion.iob > 0 && (
-                    <div style={{ fontSize: '0.85rem', color: 'var(--warning)', marginTop: '8px', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: '600' }}>
-                      <ActivityIcon size={14} /> IOB: {suggestion.iob} units active
+                  {/* Insight Text */}
+                  <div style={{ 
+                    marginBottom: '20px', padding: '12px', borderRadius: '8px', 
+                    background: 'hsla(0,0%,100%,0.05)', borderLeft: '4px solid var(--primary)',
+                    fontSize: '0.9rem' 
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                      <BrainCircuit size={16} className="text-primary" />
+                      <span style={{ fontWeight: '700' }}>Smart Logic Insight</span>
                     </div>
-                  )}
+                    <p style={{ color: 'var(--text-dim)', margin: 0, lineHeight: '1.4' }}>
+                      Dose calculated to bring you toward your target of <strong style={{ color: 'white' }}>{suggestion.target || 110} mg/dL</strong>.
+                    </p>
+                    {suggestion.iobAdjustment && (
+                      <p style={{ color: '#ffb74d', marginTop: '6px', fontSize: '0.85rem', fontWeight: '500' }}>
+                        • {suggestion.iobAdjustment}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Breakdown */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', color: 'var(--text-dim)', fontSize: '0.85rem' }}>
+                    <div style={{ padding: '10px', background: 'hsla(0,0%,100%,0.03)', borderRadius: '8px' }}>
+                      <span style={{ display: 'block', fontSize: '0.7rem' }}>CORRECTION</span>
+                      <span style={{ color: 'white', fontWeight: 'bold', fontSize: '1.1rem' }}>{suggestion.doses?.netCorrection || 0} U</span>
+                    </div>
+                    <div style={{ padding: '10px', background: 'hsla(0,0%,100%,0.03)', borderRadius: '8px' }}>
+                      <span style={{ display: 'block', fontSize: '0.7rem' }}>MEAL DOSE</span>
+                      <span style={{ color: 'white', fontWeight: 'bold', fontSize: '1.1rem' }}>{suggestion.doses?.meal || 0} U</span>
+                    </div>
+                  </div>
                 </>
               )}
-              <div style={{ fontSize: '0.8rem', marginTop: '12px', color: 'var(--text-dim)', fontStyle: 'italic', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                {suggestion.iobAdjustment && <span>• {suggestion.iobAdjustment}</span>}
-                {suggestion.activityAdjustment && <span>• {suggestion.activityAdjustment}</span>}
-                {!suggestion.iobAdjustment && !suggestion.activityAdjustment && (
-                  <span>{suggestion.reason || `Using CIR ${suggestion.cir} and ISF ${suggestion.isf}`}</span>
-                )}
-              </div>
             </div>
           )}
         </div>

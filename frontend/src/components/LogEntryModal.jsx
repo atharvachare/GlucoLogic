@@ -51,12 +51,29 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
   }, [editData, isOpen]);
 
   const updatePortion = (id, delta) => {
+    // 1. Calculate new portion counts
     const newPortions = { ...portions, [id]: Math.max(0, portions[id] + delta) };
     setPortions(newPortions);
     
-    // Auto-calculate total carbs
+    // 2. Calculate total carbs
     const totalCarbs = PORTION_DATA.reduce((sum, item) => sum + (newPortions[item.id] * item.grams), 0);
-    setFormData(prev => ({ ...prev, carbs: totalCarbs }));
+    
+    // 3. Generate Auto-Description (e.g. "2x 🫓 Roti, 1x 🥣 Dal Bowl")
+    const descriptionArr = [];
+    PORTION_DATA.forEach(item => {
+      const count = newPortions[item.id];
+      if (count > 0) {
+        descriptionArr.push(`${count}x ${item.label}`);
+      }
+    });
+    const finalDescription = descriptionArr.join(', ');
+
+    // 4. Update the combined form data
+    setFormData(prev => ({ 
+      ...prev, 
+      carbs: totalCarbs,
+      food_description: finalDescription
+    }));
   };
 
   const handleSubmit = async (e) => {

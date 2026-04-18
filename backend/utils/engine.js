@@ -176,6 +176,8 @@ const getInsulinSuggestion = async (userId, currentGlucose, carbs = 0) => {
         suggestion: parseFloat(finalSuggestion.toFixed(1)),
         isCapped: rawSuggested > cap,
         target: targetMid,
+        targetMid: targetMid,
+        targetRange: [targetMin, targetMax],
         isf: parseFloat(isf.toFixed(2)),
         isfSource,
         cir: cir,
