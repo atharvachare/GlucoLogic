@@ -67,8 +67,8 @@ const reCalculateUserStats = async (userId) => {
 };
 
 /**
- * Provides an insulin dose suggestion using the ISF.
- * Formula: Suggested Units = (Current Glucose - Target) / ISF
+ * Provides an insulin dose suggestion using the ISF and taking into account IOB.
+ * Formula: Suggested Units = ((Current Glucose - Target) / ISF) - IOB
  * Falls back to 1700 Rule (weight-based) if no personal ISF data exists.
  */
 const getInsulinSuggestion = async (userId, currentGlucose) => {
@@ -84,49 +84,86 @@ const getInsulinSuggestion = async (userId, currentGlucose) => {
     const targetMax = health.target_glucose_max || 140;
     const targetMid = (targetMin + targetMax) / 2;
 
-    // —— Safety checks ——
+    // —— 1. FETCH IOB (Insulin on Board) ——
+    // Look at logs from last 4 hours (240 mins)
+    const fourHoursAgo = new Date();
+    fourHoursAgo.setHours(fourHoursAgo.getHours() - 4);
+    
+    const recentLogsSnapshot = await db.collection('users').doc(userId).collection('logs')
+        .where('timestamp', '>=', fourHoursAgo.toISOString())
+        .get();
+        
+    let iob = 0;
+    const now = new Date();
+    recentLogsSnapshot.forEach(doc => {
+        const log = doc.data();
+        if (log.insulin_units > 0) {
+            const logTime = new Date(log.timestamp);
+            const hoursPassed = (now - logTime) / (1000 * 60 * 60);
+            if (hoursPassed < 4) {
+                // Linear decay model: 100% active at 0h, 0% active at 4h
+                // Note: Real world uses curvilinear models, but linear is a safe, clear v1.
+                const percentActive = 1 - (hoursPassed / 4);
+                iob += log.insulin_units * percentActive;
+            }
+        }
+    });
+
+    // —— 2. SAFETY CHECKS ——
     if (currentGlucose < 70) {
         return {
             suggestion: 0,
             alert: 'LOW SUGAR ALERT!',
             risk: 'High',
+            iob: parseFloat(iob.toFixed(1)),
             reason: 'Critical hypoglycemia. Do not take insulin. Consume 15g fast-acting sugar immediately.'
         };
     }
     if (currentGlucose < targetMin) {
-        return { suggestion: 0, reason: `Glucose is below your target minimum (${targetMin}). No insulin needed.` };
+        return { 
+            suggestion: 0, 
+            iob: parseFloat(iob.toFixed(1)),
+            reason: `Glucose is below your target minimum (${targetMin}). No insulin needed.` 
+        };
     }
 
-    // —— ISF: personalised or fallback ——
+    // —— 3. ISF: personalised or fallback ——
     let isf = stats.avg_isf;
     let isfSource = 'Personal';
 
     if (!isf || isf <= 0) {
         // 1700 Rule: ISF ≈ 1700 / Total Daily Dose (TDD)
-        // TDD is estimated as weight(kg) × 0.5
         const weight = health.weight || 70;
         const estimatedTDD = weight * 0.5;
         isf = 1700 / estimatedTDD;
         isfSource = 'Estimated (1700 Rule)';
     }
 
-    // —— Core formula ——
-    // Units = (Current Glucose - Target) / ISF
+    // —— 4. CORE MATH ——
+    // Raw Correction = (Current Glucose - Target) / ISF
     const dropNeeded = currentGlucose - targetMid;
     let suggestedUnits = dropNeeded / isf;
 
-    // —— Activity level adjustments ——
-    let adjustmentMsg = '';
+    // —— 5. IOB DEDUCTION ——
+    // Prevent "Insulin Stacking" by subtracting what's already in the body
+    let iobAdjustmentMsg = '';
+    if (iob > 0) {
+        iobAdjustmentMsg = `Subtracted ${iob.toFixed(1)} units of Insulin on Board (IOB) to prevent stacking.`;
+        suggestedUnits = Math.max(0, suggestedUnits - iob);
+    }
+
+    // —— 6. ACTIVITY ADJUSTMENTS ——
+    let activityAdjustmentMsg = '';
     const activity = lifestyle.activity_level || 'None';
     if (activity === 'Heavy') {
         suggestedUnits *= 0.8;
-        adjustmentMsg = 'Reduced by 20% due to Heavy Activity level.';
+        activityAdjustmentMsg = 'Reduced by 20% due to Heavy Activity level.';
     } else if (activity === 'Moderate') {
         suggestedUnits *= 0.9;
-        adjustmentMsg = 'Reduced by 10% due to Moderate Activity level.';
+        activityAdjustmentMsg = 'Reduced by 10% due to Moderate Activity level.';
     }
 
-    // —— Safety cap ——
+    // —— 7. SAFETY CAP ——
     const cap = 20;
     const finalSuggestion = Math.min(suggestedUnits, cap);
 
@@ -136,8 +173,10 @@ const getInsulinSuggestion = async (userId, currentGlucose) => {
         target: targetMid,
         isf: parseFloat(isf.toFixed(2)),
         isfSource,
+        iob: parseFloat(iob.toFixed(1)),
         confidence: stats.confidence_score || 'Not enough data',
-        adjustment: adjustmentMsg,
+        iobAdjustment: iobAdjustmentMsg,
+        activityAdjustment: activityAdjustmentMsg,
         risk: currentGlucose > 250 ? 'High' : (currentGlucose > 180 ? 'Medium' : 'Low')
     };
 };

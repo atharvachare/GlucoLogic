@@ -52,6 +52,19 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
         await api.put(`/logs/${editData.id}`, payload);
       } else {
         await api.post('/logs', payload);
+        
+        // Schedule reminder for 2 hours later if insulin was taken but no after-sugar provided
+        if (payload.insulin_units > 0 && !payload.glucose_after) {
+          if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({
+              type: 'SCHEDULE_NOTIFICATION',
+              delay: 2 * 60 * 60 * 1000, // 2 hours in ms
+              title: 'Check your sugar!',
+              body: `It's been 2 hours since your ${formData.meal_type}. Check your glucose to help me learn!`
+            });
+            console.log('Reminder scheduled for 2 hours.');
+          }
+        }
       }
       
       onLogAdded();

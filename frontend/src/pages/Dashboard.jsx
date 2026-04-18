@@ -30,11 +30,22 @@ const Dashboard = ({ user, setUser }) => {
   const [suggestion, setSuggestion] = useState(null);
   const [loadingSuggestion, setLoadingSuggestion] = useState(false);
 
+  const requestNotificationPermission = async () => {
+    if (!("Notification" in window)) return;
+    const permission = await Notification.requestPermission();
+    return permission === "granted";
+  };
+
   useEffect(() => {
     fetchDashboardData();
+    if ("Notification" in window && Notification.permission === "default") {
+      requestNotificationPermission();
+    }
   }, []);
 
   const fetchDashboardData = async () => {
+    // ... rest of fetchDashboardData ...
+
     try {
       const resp = await api.get('/dashboard');
       setStats(resp.data.stats);
@@ -148,11 +159,20 @@ const Dashboard = ({ user, setUser }) => {
                   <div style={{ fontSize: '2.5rem', fontWeight: '800', fontFamily: 'Outfit' }}>
                     {suggestion.suggestion} <span style={{ fontSize: '1rem', fontWeight: '400' }}>Units</span>
                   </div>
+                  {suggestion.iob > 0 && (
+                    <div style={{ fontSize: '0.85rem', color: 'var(--warning)', marginTop: '5px', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: '600' }}>
+                      <ActivityIcon size={14} /> IOB: {suggestion.iob} units active
+                    </div>
+                  )}
                 </>
               )}
-              <p style={{ fontSize: '0.8rem', marginTop: '10px', color: 'var(--text-dim)', fontStyle: 'italic' }}>
-                {suggestion.reason || `Based on target 120 and your ISF (${suggestion.isf} mg/dL drop per unit)`}
-              </p>
+              <div style={{ fontSize: '0.8rem', marginTop: '12px', color: 'var(--text-dim)', fontStyle: 'italic', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                {suggestion.iobAdjustment && <span>• {suggestion.iobAdjustment}</span>}
+                {suggestion.activityAdjustment && <span>• {suggestion.activityAdjustment}</span>}
+                {!suggestion.iobAdjustment && !suggestion.activityAdjustment && (
+                  <span>{suggestion.reason || `Based on target ${suggestion.target} and your ISF (${suggestion.isf})`}</span>
+                )}
+              </div>
             </div>
           )}
         </div>
