@@ -274,22 +274,27 @@ const Dashboard = ({ user, setUser }) => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
               <div style={{ padding: '15px', background: 'hsla(222, 47%, 5%, 0.3)', borderRadius: 'var(--radius)' }}>
-                <div style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>Personal ISF</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: '700' }}>{stats.avg_isf > 0 ? stats.avg_isf.toFixed(2) : '--'}</div>
-                <div style={{ fontSize: '0.7rem' }}>mg/dL drop per unit</div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Sensitivity (ISF)</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: '700' }}>{stats.avg_isf > 0 ? stats.avg_isf.toFixed(1) : '--'}</div>
+                <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)' }}>mg/dL per unit</div>
               </div>
               <div style={{ padding: '15px', background: 'hsla(222, 47%, 5%, 0.3)', borderRadius: 'var(--radius)' }}>
-                <div style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>Confidence Score</div>
-                <div style={{ 
-                  fontSize: '1.2rem', 
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Carb Ratio (CIR)</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: '700' }}>1:{stats.avg_cir > 0 ? stats.avg_cir.toFixed(1) : '--'}</div>
+                <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)' }}>grams per unit</div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0' }}>
+               <span style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>Brain Confidence</span>
+               <span style={{ 
+                  fontSize: '0.9rem', 
                   fontWeight: '700',
                   color: stats.confidence_score === 'High' ? 'var(--success)' : stats.confidence_score === 'Medium' ? 'var(--warning)' : 'var(--text-dim)'
                 }}>
                   <Zap size={14} style={{ display: 'inline', marginRight: '4px' }} />
                   {stats.confidence_score}
-                </div>
-                <div style={{ fontSize: '0.7rem' }}>{stats.total_logs} verified entries</div>
-              </div>
+                </span>
             </div>
 
             {/* Learning Progress Bar */}

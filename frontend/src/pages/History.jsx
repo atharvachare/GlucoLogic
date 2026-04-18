@@ -146,6 +146,10 @@ const History = () => {
                     </td>
                     <td style={{ padding: '15px' }}>
                       <div style={{ fontWeight: 'bold' }}>{log.insulin_units} U</div>
+                      <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)', display: 'flex', gap: '5px', marginTop: '4px' }}>
+                        {log.insulin_rapid > 0 && <span>R: {log.insulin_rapid}</span>}
+                        {log.insulin_long > 0 && <span>L: {log.insulin_long}</span>}
+                      </div>
                     </td>
                     <td style={{ padding: '15px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '5px', textTransform: 'capitalize' }}>
@@ -155,24 +159,38 @@ const History = () => {
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {log.food_description || 'No description'}
                       </div>
+                      {log.carbs > 0 && <div style={{ fontSize: '0.65rem', color: 'var(--primary)' }}>{log.carbs}g Carbs</div>}
                     </td>
                     <td style={{ padding: '15px' }}>
                       {log.glucose_after ? (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                          <Droplets size={14} className="text-success" />
+                          <Droplets size={14} className={log.glucose_after > log.glucose_before ? 'text-danger' : 'text-success'} />
                           {log.glucose_after}
                         </div>
                       ) : '--'}
                     </td>
                     <td style={{ padding: '15px' }}>
                       {(() => {
-                        // Support both new 'isf' field and old 'effectiveness' field
                         const isfVal = log.isf > 0 ? log.isf : (log.effectiveness > 0 ? log.effectiveness : null);
+                        if (log.carbs > 0 && log.glucose_after) {
+                           // Simple meal-response logic for the row
+                           const diff = log.glucose_after - log.glucose_before;
+                           return (
+                             <div style={{ fontSize: '0.8rem' }}>
+                               <div style={{ color: diff > 0 ? 'var(--warning)' : 'var(--success)', fontWeight: 'bold' }}>
+                                 {diff > 0 ? `+${diff} Spike` : `${diff} Drop`}
+                               </div>
+                               <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)' }}>
+                                 {log.insulin_rapid > 0 ? `1:${(log.carbs / log.insulin_rapid).toFixed(1)} Ratio` : 'No Insulin'}
+                               </div>
+                             </div>
+                           )
+                        }
                         return isfVal ? (
                           <div className="text-success" style={{ fontWeight: '600' }}>
                             {isfVal.toFixed(1)} <span style={{ fontSize: '0.7rem' }}>drop/U</span>
                           </div>
-                        ) : '--';
+                        ) : <span className="text-dim" style={{ fontSize: '0.7rem' }}>Pending...</span>;
                       })()}
                     </td>
                     <td style={{ padding: '15px', textAlign: 'center' }}>
