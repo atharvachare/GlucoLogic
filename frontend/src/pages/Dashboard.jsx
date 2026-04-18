@@ -14,10 +14,20 @@ import {
   User as UserIcon,
   Activity as ActivityIcon,
   ShieldCheck,
-  AlarmClock
+  AlarmClock,
+  Zap
 } from 'lucide-react';
 import Onboarding from '../components/Onboarding';
 import { Link } from 'react-router-dom';
+
+const getGlucoseColor = (mgDl) => {
+  if (!mgDl) return 'var(--text-dim)';
+  const val = parseFloat(mgDl);
+  if (val < 70) return '#ff4d4d'; // Red
+  if (val <= 180) return '#00e676'; // Green
+  if (val <= 250) return '#ffb74d'; // Amber
+  return '#d32f2f'; // Crimson
+};
 
 const HypoTimer = ({ lastLogTime }) => {
   const [timeLeft, setTimeLeft] = useState(0);
@@ -191,6 +201,11 @@ const Dashboard = ({ user, setUser }) => {
                 className="input-field" 
                 placeholder="Glucose (mg/dL)" 
                 value={currentGlucose}
+                style={{ 
+                  color: getGlucoseColor(currentGlucose), 
+                  fontWeight: 'bold', 
+                  borderBottom: `2px solid ${getGlucoseColor(currentGlucose)}` 
+                }}
                 onChange={(e) => {
                   setCurrentGlucose(e.target.value);
                   setSuggestion(null);
@@ -258,28 +273,48 @@ const Dashboard = ({ user, setUser }) => {
           <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
             <TrendingDown className="text-success" /> Body Response
           </h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-            <div style={{ padding: '15px', background: 'hsla(222, 47%, 5%, 0.3)', borderRadius: 'var(--radius)' }}>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>Personal ISF</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: '700' }}>{stats.avg_isf > 0 ? stats.avg_isf.toFixed(2) : '--'}</div>
-              <div style={{ fontSize: '0.7rem' }}>mg/dL drop per unit</div>
-            </div>
-            <div style={{ padding: '15px', background: 'hsla(222, 47%, 5%, 0.3)', borderRadius: 'var(--radius)' }}>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>Confidence Score</div>
-              <div style={{ 
-                fontSize: '1.2rem', 
-                fontWeight: '700',
-                color: stats.confidence_score === 'High' ? 'var(--success)' : stats.confidence_score === 'Medium' ? 'var(--warning)' : 'var(--text-dim)'
-              }}>
-                {stats.confidence_score}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+              <div style={{ padding: '15px', background: 'hsla(222, 47%, 5%, 0.3)', borderRadius: 'var(--radius)' }}>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>Personal ISF</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: '700' }}>{stats.avg_isf > 0 ? stats.avg_isf.toFixed(2) : '--'}</div>
+                <div style={{ fontSize: '0.7rem' }}>mg/dL drop per unit</div>
               </div>
-              <div style={{ fontSize: '0.7rem' }}>{stats.total_logs} verified entries</div>
+              <div style={{ padding: '15px', background: 'hsla(222, 47%, 5%, 0.3)', borderRadius: 'var(--radius)' }}>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>Confidence Score</div>
+                <div style={{ 
+                  fontSize: '1.2rem', 
+                  fontWeight: '700',
+                  color: stats.confidence_score === 'High' ? 'var(--success)' : stats.confidence_score === 'Medium' ? 'var(--warning)' : 'var(--text-dim)'
+                }}>
+                  <Zap size={14} style={{ display: 'inline', marginRight: '4px' }} />
+                  {stats.confidence_score}
+                </div>
+                <div style={{ fontSize: '0.7rem' }}>{stats.total_logs} verified entries</div>
+              </div>
             </div>
-          </div>
-          
-          <div style={{ marginTop: '20px', padding: '10px', borderLeft: '3px solid var(--primary)', background: 'hsla(0,0%,100%,0.03)', fontSize: '0.8rem' }}>
-            <Info size={14} style={{ marginRight: '5px', verticalAlign: 'middle' }} />
-            Current ISF is weighted towards recent data.
+
+            {/* Learning Progress Bar */}
+            <div style={{ padding: '15px', background: 'hsla(0,0%,100%,0.03)', borderRadius: 'var(--radius)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.85rem' }}>
+                <span>🧬 Learning Progress</span>
+                <span className="text-primary">{Math.min(100, Math.floor((stats.total_logs / 20) * 100))}%</span>
+              </div>
+              <div style={{ height: '8px', background: 'hsla(0,0%,100%,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
+                <div style={{ 
+                  height: '100%', 
+                  background: 'var(--primary)', 
+                  width: `${Math.min(100, (stats.total_logs / 20) * 100)}%`,
+                  transition: 'width 1s ease-out',
+                  boxShadow: '0 0 10px var(--primary)'
+                }}></div>
+              </div>
+              <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', marginTop: '8px' }}>
+                {stats.total_logs >= 20 
+                  ? "Max accuracy reached! System knows your body well." 
+                  : `Log ${20 - stats.total_logs} more meals to unlock High Precision mode.`}
+              </p>
+            </div>
           </div>
         </div>
 
