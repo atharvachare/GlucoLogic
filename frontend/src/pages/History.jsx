@@ -190,7 +190,11 @@ const History = () => {
                           <div className="text-success" style={{ fontWeight: '600' }}>
                             {isfVal.toFixed(1)} <span style={{ fontSize: '0.7rem' }}>drop/U</span>
                           </div>
-                        ) : <span className="text-dim" style={{ fontSize: '0.7rem' }}>Pending...</span>;
+                        ) : (
+                          <span className="text-dim" style={{ fontSize: '0.7rem' }}>
+                            {!log.glucose_after ? 'Awaiting After Reading' : 'No drop detected'}
+                          </span>
+                        );
                       })()}
                     </td>
                     <td style={{ padding: '15px', textAlign: 'center' }}>
