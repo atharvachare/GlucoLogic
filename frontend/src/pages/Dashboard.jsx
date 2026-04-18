@@ -27,6 +27,7 @@ const Dashboard = ({ user, setUser }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [currentGlucose, setCurrentGlucose] = useState('');
+  const [currentCarbs, setCurrentCarbs] = useState('');
   const [suggestion, setSuggestion] = useState(null);
   const [loadingSuggestion, setLoadingSuggestion] = useState(false);
 
