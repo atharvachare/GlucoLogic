@@ -97,16 +97,16 @@ const getInsulinSuggestion = async (userId, currentGlucose, carbs = 0) => {
     recentLogsSnapshot.forEach(doc => {
         const log = doc.data();
         
-        // IMPORTANT: Only Bolus (Rapid-Acting) insulin counts for IOB tracking.
-        // Basal (Long-Acting) provides background coverage and should NOT be subtracted from correction doses.
-        const isBolus = !log.insulin_type || log.insulin_type === 'bolus';
+        // IOB Tracking should ONLY consider Rapid-Acting insulin.
+        // We prioritizing 'insulin_rapid' field, but fallback to 'insulin_units' for older logs.
+        const rapidUnits = log.insulin_rapid || (log.insulin_type !== 'basal' ? log.insulin_units : 0);
         
-        if (log.insulin_units > 0 && isBolus) {
+        if (rapidUnits > 0) {
             const logTime = new Date(log.timestamp);
             const hoursPassed = (now - logTime) / (1000 * 60 * 60);
             if (hoursPassed < 4) {
                 const percentActive = 1 - (hoursPassed / 4);
-                iob += log.insulin_units * percentActive;
+                iob += rapidUnits * percentActive;
             }
         }
     });

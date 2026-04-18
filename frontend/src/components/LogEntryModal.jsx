@@ -13,8 +13,8 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
   const [formData, setFormData] = useState({
     glucose_before: '',
     glucose_after: '',
-    insulin_units: '',
-    insulin_type: 'bolus',
+    insulin_rapid: '',
+    insulin_long: '',
     carbs: 0,
     meal_type: 'breakfast',
     food_description: '',
@@ -28,8 +28,8 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
       setFormData({
         glucose_before: editData.glucose_before || '',
         glucose_after: editData.glucose_after || '',
-        insulin_units: editData.insulin_units || '',
-        insulin_type: editData.insulin_type || 'bolus',
+        insulin_rapid: editData.insulin_rapid || editData.insulin_units || '',
+        insulin_long: editData.insulin_long || '',
         carbs: editData.carbs || 0,
         meal_type: editData.meal_type || 'breakfast',
         food_description: editData.food_description || '',
@@ -39,8 +39,8 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
       setFormData({
         glucose_before: '',
         glucose_after: '',
-        insulin_units: '',
-        insulin_type: 'bolus',
+        insulin_rapid: '',
+        insulin_long: '',
         carbs: 0,
         meal_type: 'breakfast',
         food_description: '',
@@ -67,7 +67,10 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
         ...formData,
         glucose_before: formData.glucose_before ? parseFloat(formData.glucose_before) : null,
         glucose_after: formData.glucose_after ? parseFloat(formData.glucose_after) : null,
-        insulin_units: formData.insulin_units ? parseFloat(formData.insulin_units) : 0,
+        insulin_rapid: formData.insulin_rapid ? parseFloat(formData.insulin_rapid) : 0,
+        insulin_long: formData.insulin_long ? parseFloat(formData.insulin_long) : 0,
+        // Combined field for backward compatibility
+        insulin_units: (parseFloat(formData.insulin_rapid) || 0) + (parseFloat(formData.insulin_long) || 0),
         carbs: parseFloat(formData.carbs) || 0,
       };
 
@@ -152,7 +155,7 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
 
           <div className="res-grid" style={{ marginBottom: '15px' }}>
             <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>Glucose (Before Meal)</label>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>Glucose (Pre-Meal)</label>
               <div style={{ position: 'relative' }}>
                 <Droplets size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-dim)' }} />
                 <input 
@@ -161,21 +164,21 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
                 />
               </div>
             </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>Insulin Units</label>
-              <div style={{ display: 'flex', gap: '5px' }}>
-                <input 
-                  type="number" step="0.5" className="input-field" placeholder="Units"
-                  value={formData.insulin_units} onChange={(e) => setFormData({...formData, insulin_units: e.target.value})}
-                />
-                <select 
-                  className="input-field" style={{ width: '100px', fontSize: '0.8rem', padding: '0 8px' }}
-                  value={formData.insulin_type} onChange={(e) => setFormData({...formData, insulin_type: e.target.value})}
-                >
-                  <option value="bolus">Bolus</option>
-                  <option value="basal">Basal</option>
-                </select>
-              </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+               <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>Rapid Acting</label>
+                  <input 
+                    type="number" step="0.5" className="input-field" placeholder="Meal"
+                    value={formData.insulin_rapid} onChange={(e) => setFormData({...formData, insulin_rapid: e.target.value})}
+                  />
+               </div>
+               <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>Long Acting</label>
+                  <input 
+                    type="number" step="0.5" className="input-field" placeholder="Basal"
+                    value={formData.insulin_long} onChange={(e) => setFormData({...formData, insulin_long: e.target.value})}
+                  />
+               </div>
             </div>
           </div>
 
