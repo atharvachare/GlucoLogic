@@ -2,23 +2,31 @@ const { db } = require('../firebase');
 const { calculateISF, reCalculateUserStats, getInsulinSuggestion } = require('../utils/engine');
 
 const createLog = async (req, res) => {
-    const { glucose_before, glucose_after, insulin_units, meal_type, food_description, activity_level } = req.body;
+    const { glucose_before, glucose_after, insulin_units, insulin_rapid, insulin_long, carbs, meal_type, food_description, activity_level } = req.body;
     const userId = req.user.id;
 
     try {
+        const rapid = parseFloat(insulin_rapid) || 0;
+        const long = parseFloat(insulin_long) || 0;
+        const total = parseFloat(insulin_units) || (rapid + long);
+        const meals = parseFloat(carbs) || 0;
+
         // ISF = (before - after) / units; null if glucose didn't drop
         let isf = null;
-        if (glucose_before && glucose_after && insulin_units > 0) {
-            isf = calculateISF(glucose_before, glucose_after, insulin_units);
+        if (glucose_before && glucose_after && rapid > 0) {
+            isf = calculateISF(glucose_before, glucose_after, rapid);
         }
 
         const logRef = db.collection('users').doc(userId).collection('logs').doc();
         const logData = {
             id: logRef.id,
             user_id: userId,
-            glucose_before,
-            glucose_after,
-            insulin_units,
+            glucose_before: glucose_before ? parseFloat(glucose_before) : null,
+            glucose_after: glucose_after ? parseFloat(glucose_after) : null,
+            insulin_units: total,
+            insulin_rapid: rapid,
+            insulin_long: long,
+            carbs: meals,
             meal_type,
             food_description,
             activity_level,
@@ -28,7 +36,8 @@ const createLog = async (req, res) => {
 
         await logRef.set(logData);
 
-        if (isf !== null) {
+        // ALWAYS recalculate if we have a before/after pair — essential for learning CIR from spikes
+        if (glucose_before && glucose_after) {
             await reCalculateUserStats(userId);
         }
 
@@ -166,7 +175,7 @@ const getDashboardStats = async (req, res) => {
 const updateLog = async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
-    const { glucose_before, glucose_after, insulin_units, meal_type, food_description, activity_level } = req.body;
+    const { glucose_before, glucose_after, insulin_units, insulin_rapid, insulin_long, carbs, meal_type, food_description, activity_level } = req.body;
 
     try {
         const logRef = db.collection('users').doc(userId).collection('logs').doc(id);
@@ -176,13 +185,27 @@ const updateLog = async (req, res) => {
             return res.status(404).json({ error: 'Log not found' });
         }
 
+        const rapid = parseFloat(insulin_rapid) || 0;
+        const long = parseFloat(insulin_long) || 0;
+        const total = parseFloat(insulin_units) || (rapid + long);
+        const meals = parseFloat(carbs) || 0;
+
         let isf = null;
-        if (glucose_before && glucose_after && insulin_units > 0) {
-            isf = calculateISF(glucose_before, glucose_after, insulin_units);
+        if (glucose_before && glucose_after && rapid > 0) {
+            isf = calculateISF(glucose_before, glucose_after, rapid);
         }
 
         await logRef.update({
-            glucose_before, glucose_after, insulin_units, meal_type, food_description, activity_level, isf
+            glucose_before: glucose_before ? parseFloat(glucose_before) : null,
+            glucose_after: glucose_after ? parseFloat(glucose_after) : null,
+            insulin_units: total,
+            insulin_rapid: rapid,
+            insulin_long: long,
+            carbs: meals,
+            meal_type,
+            food_description,
+            activity_level,
+            isf
         });
 
         await reCalculateUserStats(userId);

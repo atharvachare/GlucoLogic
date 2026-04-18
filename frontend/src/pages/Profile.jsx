@@ -270,7 +270,7 @@ const Profile = () => {
           {activeTab === 'health' && (
             <div className="animate-fade-in">
               <h3 style={{ marginBottom: '20px' }}>Health Baseline</h3>
-              <div className="res-grid form-grid-3">
+              <div className="res-grid form-grid-3" style={{ marginBottom: '30px' }}>
                 <div>
                   <label className="text-dim" style={{ fontSize: '0.8rem' }}>Weight (kg)</label>
                   <input type="number" className="input-field" value={profile.health.weight || ''} onChange={(e) => setProfile({...profile, health: {...profile.health, weight: e.target.value}})} />
@@ -291,22 +291,44 @@ const Profile = () => {
                     <input type="number" className="input-field" placeholder="Max" value={profile.health.target_glucose_max} onChange={(e) => setProfile({...profile, health: {...profile.health, target_glucose_max: e.target.value}})} />
                   </div>
                 </div>
-                <div>
-                  <label className="text-dim" style={{ fontSize: '0.8rem' }}>Last HbA1c (%)</label>
-                  <input type="number" step="0.1" className="input-field" value={profile.health.hba1c || ''} onChange={(e) => setProfile({...profile, health: {...profile.health, hba1c: e.target.value}})} />
+              </div>
+
+              {/* Advanced Analytics */}
+              <div style={{ padding: '20px', background: 'hsla(210, 100%, 50%, 0.1)', borderRadius: 'var(--radius)', border: '1px solid hsla(210, 100%, 50%, 0.2)' }}>
+                <h4 style={{ marginBottom: '15px', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Activity size={18} /> Learned Clinical Ratios
+                </h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px' }}>
+                  <div style={{ padding: '10px', background: 'hsla(0,0%,100%,0.03)', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>Personal ISF</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{profile.stats?.avg_isf?.toFixed(1) || '--'}</div>
+                  </div>
+                  <div style={{ padding: '10px', background: 'hsla(0,0%,100%,0.03)', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>Learned CIR</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>1:{profile.stats?.avg_cir?.toFixed(1) || '--'}</div>
+                  </div>
                 </div>
-                <div style={{ gridColumn: 'span 2' }}>
-                  <label className="text-dim" style={{ fontSize: '0.8rem' }}>Blood Pressure</label>
-                  <input className="input-field" value={profile.health.blood_pressure || ''} placeholder="e.g. 120/80" onChange={(e) => setProfile({...profile, health: {...profile.health, blood_pressure: e.target.value}})} />
-                </div>
-                <div style={{ gridColumn: 'span 3' }}>
-                  <label className="text-dim" style={{ fontSize: '0.8rem' }}>Allergies (Food/Medicine)</label>
-                  <input className="input-field" value={profile.health.allergies || ''} onChange={(e) => setProfile({...profile, health: {...profile.health, allergies: e.target.value}})} />
-                </div>
-                <div style={{ gridColumn: 'span 3' }}>
-                  <label className="text-dim" style={{ fontSize: '0.8rem' }}>Risk History (Frequent Hypo/Hyper)</label>
-                  <input className="input-field" value={profile.health.risk_history || ''} onChange={(e) => setProfile({...profile, health: {...profile.health, risk_history: e.target.value}})} />
-                </div>
+                
+                <button 
+                  className="btn btn-outline" 
+                  style={{ width: '100%', justifyContent: 'center', borderStyle: 'dashed', fontSize: '0.85rem' }}
+                  onClick={async (e) => {
+                    const originalText = e.target.innerText;
+                    try {
+                      e.target.innerText = 'Syncing Brain...';
+                      e.target.disabled = true;
+                      await api.post('/logs/migrate-isf');
+                      alert('Success: All historical data analyzed. Ratios updated.');
+                      window.location.reload();
+                    } catch (err) {
+                      alert('Sync failed. Please try again.');
+                      e.target.innerText = originalText;
+                      e.target.disabled = false;
+                    }
+                  }}
+                >
+                  <Save size={16} /> Sync Brain with History
+                </button>
               </div>
             </div>
           )}

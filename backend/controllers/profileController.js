@@ -26,7 +26,8 @@ const getProfile = async (req, res) => {
             medical: data.medical || {},
             insulin: data.insulin || {},
             lifestyle: data.lifestyle || {},
-            health: data.health || {}
+            health: data.health || {},
+            stats: data.stats || {}
         });
     } catch (error) {
         console.error('Get profile error:', error);

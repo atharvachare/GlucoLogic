@@ -13,57 +13,80 @@ const calculateISF = (before, after, units) => {
 };
 
 /**
- * Re-calculates global user stats (avg ISF) based on history in Firestore.
+ * Re-calculates global user stats (avg ISF and avg CIR) based on history in Firestore.
  * Uses a weighted average — recent 10 logs are counted double (2x weight).
  */
 const reCalculateUserStats = async (userId) => {
-    // Fetch recent logs ordered by time, then filter for valid ISF in memory
-    // (Avoids need for Firestore composite index on isf + timestamp)
     const logsSnapshot = await db.collection('users').doc(userId).collection('logs')
         .orderBy('timestamp', 'desc')
-        .limit(100)
+        .limit(50)
         .get();
 
-    // Filter to only logs with a valid positive ISF
-    const allLogs = logsSnapshot.docs.map(doc => doc.data());
-    const logs = allLogs
-        .filter(log => {
-            // Support both new 'isf' field and old 'effectiveness' field
-            const isf = log.isf !== undefined ? log.isf : log.effectiveness;
-            return isf !== null && isf !== undefined && isf > 0;
-        })
-        .slice(0, 50); // Limit to 50 for weighted average
+    const logs = logsSnapshot.docs.map(doc => doc.data());
 
-    if (logs.length === 0) return;
-
-    let totalWeightedISF = 0;
-    let totalWeight = 0;
-
-    logs.forEach((log, index) => {
-        // Recent 10 logs are weighted 2x to emphasise current body response
-        const weight = index < 10 ? 2 : 1;
-        // Support both new 'isf' field and old 'effectiveness' field
-        const isfVal = log.isf !== undefined && log.isf !== null ? log.isf : log.effectiveness;
-        totalWeightedISF += isfVal * weight;
-        totalWeight += weight;
+    // 1. Calculate Personal ISF (Sensitivity)
+    const isfLogs = logs.filter(log => {
+        const rapid = log.insulin_rapid || (log.insulin_type !== 'basal' ? log.insulin_units : 0);
+        return log.glucose_before && log.glucose_after && rapid > 0 && (log.glucose_before - log.glucose_after) > 0;
     });
 
-    const avgISF = totalWeightedISF / totalWeight;
+    let totalWeightedISF = 0;
+    let totalISFWeight = 0;
+    isfLogs.forEach((log, index) => {
+        const rapid = log.insulin_rapid || (log.insulin_type !== 'basal' ? log.insulin_units : 0);
+        const drop = log.glucose_before - log.glucose_after;
+        const efficiency = drop / rapid;
+        const weight = index < 10 ? 2 : 1;
+        totalWeightedISF += efficiency * weight;
+        totalISFWeight += weight;
+    });
+    const avgISF = totalISFWeight > 0 ? totalWeightedISF / totalISFWeight : 0;
+
+    // 2. Calculate Personal CIR (Carb-to-Insulin Ratio)
+    let avgCIR = 0;
+    if (avgISF > 0) {
+        const cirLogs = logs.filter(log => {
+            const rapid = log.insulin_rapid || (log.insulin_type !== 'basal' ? log.insulin_units : 0);
+            return log.carbs > 0 && rapid > 0 && log.glucose_before && log.glucose_after;
+        });
+
+        let totalWeightedCIR = 0;
+        let totalCIRWeight = 0;
+        cirLogs.forEach((log, index) => {
+            const rapid = log.insulin_rapid || (log.insulin_type !== 'basal' ? log.insulin_units : 0);
+            const rise = log.glucose_after - log.glucose_before;
+            // correctionGap: How many units were missing (+) or extra (-)
+            const correctionGap = rise / avgISF;
+            const neededInsulin = rapid + correctionGap;
+            
+            if (neededInsulin > 0) {
+                const cirCandidate = log.carbs / neededInsulin;
+                // Safety bound for CIR
+                if (cirCandidate >= 3 && cirCandidate <= 100) {
+                    const weight = index < 10 ? 2 : 1;
+                    totalWeightedCIR += cirCandidate * weight;
+                    totalCIRWeight += weight;
+                }
+            }
+        });
+        avgCIR = totalCIRWeight > 0 ? totalWeightedCIR / totalCIRWeight : 0;
+    }
 
     let confidence = 'Low';
-    if (logs.length >= 15) confidence = 'High';
-    else if (logs.length >= 5) confidence = 'Medium';
+    const validLogCount = isfLogs.length; 
+    if (validLogCount >= 15) confidence = 'High';
+    else if (validLogCount >= 5) confidence = 'Medium';
 
     const stats = {
         avg_isf: avgISF,
+        avg_cir: avgCIR,
         confidence_score: confidence,
         total_logs: logs.length,
         last_updated: new Date().toISOString()
     };
 
     await db.collection('users').doc(userId).update({ stats });
-
-    return { avgISF, confidence, count: logs.length };
+    return stats;
 };
 
 /**
