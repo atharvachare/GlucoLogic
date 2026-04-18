@@ -20,15 +20,6 @@ import {
 import Onboarding from '../components/Onboarding';
 import { Link } from 'react-router-dom';
 
-const getGlucoseColor = (mgDl) => {
-  if (!mgDl) return 'var(--text-dim)';
-  const val = parseFloat(mgDl);
-  if (val < 70) return '#ff4d4d'; // Red
-  if (val <= 180) return '#00e676'; // Green
-  if (val <= 250) return '#ffb74d'; // Amber
-  return '#d32f2f'; // Crimson
-};
-
 const HypoTimer = ({ lastLogTime }) => {
   const [timeLeft, setTimeLeft] = useState(0);
 
@@ -201,11 +192,6 @@ const Dashboard = ({ user, setUser }) => {
                 className="input-field" 
                 placeholder="Glucose (mg/dL)" 
                 value={currentGlucose}
-                style={{ 
-                  color: getGlucoseColor(currentGlucose), 
-                  fontWeight: 'bold', 
-                  borderBottom: `2px solid ${getGlucoseColor(currentGlucose)}` 
-                }}
                 onChange={(e) => {
                   setCurrentGlucose(e.target.value);
                   setSuggestion(null);
