@@ -214,30 +214,32 @@ const Dashboard = ({ user, setUser }) => {
             </div>
 
             {/* Habit-Based Predictor */}
-            {!suggestion && stats.meal_stats && (
+            {!suggestion && (
               <div style={{ marginTop: '5px' }}>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginBottom: '8px' }}>Or use your typical intake:</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {['breakfast', 'lunch', 'dinner'].map(type => (
-                    <button 
-                      key={type}
-                      className="btn btn-outline" 
-                      style={{ 
-                        fontSize: '0.8rem', padding: '10px', justifyContent: 'space-between', width: '100%',
-                        borderColor: 'hsla(0,0%,100%,0.1)' 
-                      }}
-                      onClick={() => {
-                        const carbs = stats.meal_stats[`avg_carbs_${type}`] || 0;
-                        setCurrentCarbs(carbs);
-                      }}
-                    >
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Zap size={14} className="text-primary" />
-                        Usual {type.charAt(0).toUpperCase() + type.slice(1)}
-                      </span>
-                      <strong style={{ color: 'white' }}>{stats.meal_stats[`avg_carbs_${type}`]}g</strong>
-                    </button>
-                  ))}
+                  {['breakfast', 'lunch', 'dinner'].map(type => {
+                    const mealStats = stats?.meal_stats || { avg_carbs_breakfast: 30, avg_carbs_lunch: 50, avg_carbs_dinner: 60 };
+                    const carbVal = mealStats[`avg_carbs_${type}`] || (type === 'breakfast' ? 30 : type === 'lunch' ? 50 : 60);
+
+                    return (
+                      <button 
+                        key={type}
+                        className="btn btn-outline" 
+                        style={{ 
+                          fontSize: '0.8rem', padding: '10px', justifyContent: 'space-between', width: '100%',
+                          borderColor: 'hsla(0,0%,100%,0.1)' 
+                        }}
+                        onClick={() => setCurrentCarbs(carbVal)}
+                      >
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Zap size={14} className="text-primary" />
+                          Usual {type.charAt(0).toUpperCase() + type.slice(1)}
+                        </span>
+                        <strong style={{ color: 'white' }}>{carbVal}g</strong>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}

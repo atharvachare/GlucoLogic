@@ -156,8 +156,10 @@ const getDashboardStats = async (req, res) => {
         const rawStats = data.stats || {};
         const stats = {
             avg_isf: rawStats.avg_isf || (rawStats.avg_effectiveness > 0 ? rawStats.avg_effectiveness : 0),
+            avg_cir: rawStats.avg_cir || 0,
             confidence_score: rawStats.confidence_score || 'Low',
-            total_logs: rawStats.total_logs || 0
+            total_logs: rawStats.total_logs || 0,
+            meal_stats: rawStats.meal_stats || { avg_carbs_breakfast: 30, avg_carbs_lunch: 50, avg_carbs_dinner: 60, avg_carbs_snack: 15 }
         };
 
         res.json({
