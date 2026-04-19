@@ -27,7 +27,7 @@ const GlucoseChart = ({ data }) => {
     labels: data.map(log => new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })),
     datasets: [
       {
-        label: 'Glucose (mg/dL)',
+        label: 'Before Reading',
         data: data.map(log => log.glucose_before),
         borderColor: 'hsl(210, 100%, 50%)',
         backgroundColor: 'hsla(210, 100%, 50%, 0.1)',
@@ -35,6 +35,17 @@ const GlucoseChart = ({ data }) => {
         tension: 0.4,
         pointRadius: 4,
         pointHoverRadius: 6,
+      },
+      {
+        label: 'After Reading',
+        data: data.map(log => log.glucose_after),
+        borderColor: 'hsl(140, 100%, 50%)',
+        backgroundColor: 'hsla(140, 100%, 50%, 0.1)',
+        fill: true,
+        tension: 0.4,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        borderDash: [5, 5],
       }
     ]
   };
@@ -44,7 +55,18 @@ const GlucoseChart = ({ data }) => {
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        display: false,
+        display: true,
+        position: 'top',
+        align: 'end',
+        labels: {
+          color: 'white',
+          usePointStyle: true,
+          boxWidth: 8,
+          padding: 15,
+          font: {
+            size: 11
+          }
+        }
       },
       tooltip: {
         mode: 'index',
