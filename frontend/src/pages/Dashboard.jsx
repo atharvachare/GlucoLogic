@@ -232,12 +232,12 @@ const Dashboard = ({ user, setUser }) => {
                     };
 
                     return (
-                      <button 
+                      <button
                         key={type}
-                        className="btn btn-outline" 
-                        style={{ 
+                        className="btn btn-outline"
+                        style={{
                           fontSize: '0.8rem', padding: '10px', justifyContent: 'space-between', width: '100%',
-                          borderColor: 'hsla(0,0%,100%,0.1)' 
+                          borderColor: 'hsla(0,0%,100%,0.1)'
                         }}
                         onClick={() => setCurrentCarbs(carbVal)}
                       >
@@ -259,10 +259,10 @@ const Dashboard = ({ user, setUser }) => {
             {suggestion && (
               <div className="animate-fade-in" style={{ padding: '20px', borderRadius: 'var(--radius)', background: 'hsla(210, 100%, 50%, 0.15)', border: '1px solid hsla(210, 100%, 50%, 0.3)' }}>
                 {suggestion.alert ? (
-                  <div style={{ 
-                    background: 'var(--danger)', 
-                    color: 'white', 
-                    padding: '20px', 
+                  <div style={{
+                    background: 'var(--danger)',
+                    color: 'white',
+                    padding: '20px',
                     borderRadius: 'var(--radius)',
                     textAlign: 'center',
                     boxShadow: '0 0 20px rgba(239, 68, 68, 0.4)'
@@ -273,8 +273,8 @@ const Dashboard = ({ user, setUser }) => {
                     <p style={{ fontSize: '1.05rem', fontWeight: '600', margin: '0 0 15px 0' }}>{suggestion.reason || 'Critical sugar level.'}</p>
                     <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px', fontSize: '0.9rem', textAlign: 'left' }}>
                       <strong style={{ display: 'block', marginBottom: '5px' }}>🚑 Emergency 15-15 Rule Action:</strong>
-                      1. Eat 15g of fast carbs NOW (e.g., 1/2 cup juice, 1 tbsp honey).<br/>
-                      2. DO NOT inject any insulin.<br/>
+                      1. Eat 15g of fast carbs NOW (e.g., 1/2 cup juice, 1 tbsp honey).<br />
+                      2. DO NOT inject any insulin.<br />
                       3. Wait 15 minutes, then check sugar again.
                     </div>
                   </div>
@@ -309,10 +309,10 @@ const Dashboard = ({ user, setUser }) => {
 
                       {/* Clinical Pre-Bolus Advice */}
                       {suggestion.doses?.meal > 0 && (
-                        <div style={{ 
-                          marginTop: '15px', padding: '12px', borderRadius: '8px', 
+                        <div style={{
+                          marginTop: '15px', padding: '12px', borderRadius: '8px',
                           background: 'hsla(140, 100%, 40%, 0.1)', borderLeft: '4px solid #4ade80',
-                          fontSize: '0.85rem' 
+                          fontSize: '0.85rem'
                         }}>
                           <div style={{ fontWeight: 'bold', color: 'white', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <AlarmClock size={16} className="text-success" />

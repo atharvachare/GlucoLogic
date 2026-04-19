@@ -30,7 +30,7 @@ const Onboarding = ({ onComplete }) => {
           api.put('/profile/lifestyle', formData.lifestyle),
           api.put('/profile/health', formData.health)
         ]);
-        
+
         // Final success check
         onComplete();
       } catch (err) {
@@ -72,15 +72,15 @@ const Onboarding = ({ onComplete }) => {
             <h2 style={{ marginBottom: '10px', fontSize: '1.8rem' }}>Welcome! 👋</h2>
             <p className="text-dim" style={{ marginBottom: '25px' }}>Let's personalize your health journey.</p>
             <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Full Name</label>
-            <input className="input-field" style={{ marginBottom: '20px' }} placeholder="How should we call you?" value={formData.personal.name} onChange={e => setFormData({...formData, personal: {...formData.personal, name: e.target.value}})} />
+            <input className="input-field" style={{ marginBottom: '20px' }} placeholder="How should we call you?" value={formData.personal.name} onChange={e => setFormData({ ...formData, personal: { ...formData.personal, name: e.target.value } })} />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Age</label>
-                <input type="number" className="input-field" placeholder="Years" value={formData.personal.age} onChange={e => setFormData({...formData, personal: {...formData.personal, age: e.target.value}})} />
+                <input type="number" className="input-field" placeholder="Years" value={formData.personal.age} onChange={e => setFormData({ ...formData, personal: { ...formData.personal, age: e.target.value } })} />
               </div>
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Gender</label>
-                <select className="input-field" value={formData.personal.gender} onChange={e => setFormData({...formData, personal: {...formData.personal, gender: e.target.value}})}>
+                <select className="input-field" value={formData.personal.gender} onChange={e => setFormData({ ...formData, personal: { ...formData.personal, gender: e.target.value } })}>
                   <option value="">Select</option>
                   <option value="Male">Male</option>
                   <option value="Female">Female</option>
@@ -96,13 +96,13 @@ const Onboarding = ({ onComplete }) => {
             <h2 style={{ marginBottom: '10px', fontSize: '1.8rem' }}>Medical Profile 🩺</h2>
             <p className="text-dim" style={{ marginBottom: '25px' }}>This helps us set accurate targets.</p>
             <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Diabetes Type</label>
-            <select className="input-field" style={{ marginBottom: '20px' }} value={formData.medical.diabetes_type} onChange={e => setFormData({...formData, medical: {...formData.medical, diabetes_type: e.target.value}})}>
+            <select className="input-field" style={{ marginBottom: '20px' }} value={formData.medical.diabetes_type} onChange={e => setFormData({ ...formData, medical: { ...formData.medical, diabetes_type: e.target.value } })}>
               <option value="Type 1">Type 1</option>
               <option value="Type 2">Type 2</option>
               <option value="Pre-diabetic">Pre-diabetic</option>
             </select>
             <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Treatment Method</label>
-            <select className="input-field" value={formData.medical.treatment_type} onChange={e => setFormData({...formData, medical: {...formData.medical, treatment_type: e.target.value}})}>
+            <select className="input-field" value={formData.medical.treatment_type} onChange={e => setFormData({ ...formData, medical: { ...formData.medical, treatment_type: e.target.value } })}>
               <option value="Insulin">Insulin Only</option>
               <option value="Oral">Oral Medication</option>
               <option value="Both">Both</option>
@@ -115,13 +115,13 @@ const Onboarding = ({ onComplete }) => {
             <h2 style={{ marginBottom: '10px', fontSize: '1.8rem' }}>Insulin Data 💉</h2>
             <p className="text-dim" style={{ marginBottom: '25px' }}>Essential for the learning engine.</p>
             <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Primary Insulin Type</label>
-            <select className="input-field" style={{ marginBottom: '20px' }} value={formData.insulin.insulin_type} onChange={e => setFormData({...formData, insulin: {...formData.insulin, insulin_type: e.target.value}})}>
+            <select className="input-field" style={{ marginBottom: '20px' }} value={formData.insulin.insulin_type} onChange={e => setFormData({ ...formData, insulin: { ...formData.insulin, insulin_type: e.target.value } })}>
               <option value="Rapid-acting">Rapid-acting</option>
               <option value="Long-acting">Long-acting</option>
               <option value="Mixed">Mixed</option>
             </select>
             <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Approx. Daily Dose (Units)</label>
-            <input type="number" className="input-field" placeholder="Total U per day" value={formData.insulin.daily_dose} onChange={e => setFormData({...formData, insulin: {...formData.insulin, daily_dose: e.target.value}})} />
+            <input type="number" className="input-field" placeholder="Total U per day" value={formData.insulin.daily_dose} onChange={e => setFormData({ ...formData, insulin: { ...formData.insulin, daily_dose: e.target.value } })} />
           </div>
         )}
 
@@ -130,7 +130,7 @@ const Onboarding = ({ onComplete }) => {
             <h2 style={{ marginBottom: '10px', fontSize: '1.8rem' }}>Lifestyle 🏃‍♂️</h2>
             <p className="text-dim" style={{ marginBottom: '25px' }}>Activity impacts insulin needs.</p>
             <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Your Typical Routine</label>
-            <select className="input-field" value={formData.lifestyle.activity_level} onChange={e => setFormData({...formData, lifestyle: {...formData.lifestyle, activity_level: e.target.value}})}>
+            <select className="input-field" value={formData.lifestyle.activity_level} onChange={e => setFormData({ ...formData, lifestyle: { ...formData.lifestyle, activity_level: e.target.value } })}>
               <option value="None">Sedentary (No Exercise)</option>
               <option value="Light">Light (Active daily)</option>
               <option value="Moderate">Moderate (Gym 3-4x week)</option>
@@ -146,19 +146,19 @@ const Onboarding = ({ onComplete }) => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Weight (kg)</label>
-                <input type="number" className="input-field" placeholder="kg" value={formData.health.weight} onChange={e => setFormData({...formData, health: {...formData.health, weight: e.target.value}})} />
+                <input type="number" className="input-field" placeholder="kg" value={formData.health.weight} onChange={e => setFormData({ ...formData, health: { ...formData.health, weight: e.target.value } })} />
               </div>
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Height (cm)</label>
-                <input type="number" className="input-field" placeholder="cm" value={formData.health.height} onChange={e => setFormData({...formData, health: {...formData.health, height: e.target.value}})} />
+                <input type="number" className="input-field" placeholder="cm" value={formData.health.height} onChange={e => setFormData({ ...formData, health: { ...formData.health, height: e.target.value } })} />
               </div>
             </div>
             <div style={{ padding: '20px', background: 'hsla(0,0%,100%,0.05)', borderRadius: 'var(--radius)', border: '1px solid var(--glass-border)' }}>
               <label style={{ display: 'block', marginBottom: '12px', fontSize: '0.9rem', fontWeight: '600' }}>Goal Glucose Range (mg/dL)</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                <input type="number" className="input-field" placeholder="Min" value={formData.health.target_glucose_min} onChange={e => setFormData({...formData, health: {...formData.health, target_glucose_min: e.target.value}})} />
+                <input type="number" className="input-field" placeholder="Min" value={formData.health.target_glucose_min} onChange={e => setFormData({ ...formData, health: { ...formData.health, target_glucose_min: e.target.value } })} />
                 <span className="text-dim">to</span>
-                <input type="number" className="input-field" placeholder="Max" value={formData.health.target_glucose_max} onChange={e => setFormData({...formData, health: {...formData.health, target_glucose_max: e.target.value}})} />
+                <input type="number" className="input-field" placeholder="Max" value={formData.health.target_glucose_max} onChange={e => setFormData({ ...formData, health: { ...formData.health, target_glucose_max: e.target.value } })} />
               </div>
             </div>
           </div>

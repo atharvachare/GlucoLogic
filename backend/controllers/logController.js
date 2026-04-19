@@ -70,7 +70,7 @@ const getLogs = async (req, res) => {
             // Auto-calculate if missing but data is complete
             if (isf === undefined || isf === null) {
                 const { glucose_before, glucose_after, insulin_units, effectiveness } = data;
-                
+
                 // Fallback to legacy effectiveness if available
                 if (effectiveness > 0) {
                     isf = effectiveness;
@@ -246,14 +246,14 @@ const migrateISF = async (req, res) => {
             const { glucose_before, glucose_after, insulin_units, insulin_rapid, insulin_long } = data;
 
             const rapid = parseFloat(insulin_rapid) || (data.insulin_type !== 'basal' ? parseFloat(insulin_units) : 0);
-            
+
             // Only process logs that have all readings but no valid 'isf' yet
             const hasReadings = glucose_before && glucose_after && rapid > 0;
             const needsMigration = data.isf === undefined || data.isf === null;
 
             if (hasReadings && needsMigration) {
                 const calculatedISF = calculateISF(glucose_before, glucose_after, rapid);
-                batch.update(doc.ref, { 
+                batch.update(doc.ref, {
                     isf: calculatedISF,
                     insulin_rapid: rapid, // Back-fill the new field if it was missing
                     insulin_units: parseFloat(insulin_units) || rapid
