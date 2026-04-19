@@ -25,9 +25,14 @@ const reCalculateUserStats = async (userId) => {
     const logs = logsSnapshot.docs.map(doc => doc.data());
 
     // 1. Calculate Personal ISF (Sensitivity)
+    // IMPORTANT: Only learn ISF from logs with NO food (carbs === 0).
+    // Food masks the true insulin effect, causing accuracy drag.
     const isfLogs = logs.filter(log => {
         const rapid = log.insulin_rapid || (log.insulin_type !== 'basal' ? log.insulin_units : 0);
-        return log.glucose_before && log.glucose_after && rapid > 0 && (log.glucose_before - log.glucose_after) > 0;
+        const hasReadings = log.glucose_before && log.glucose_after;
+        const reflectsISF = rapid > 0 && (log.glucose_before - log.glucose_after) > 0;
+        const noFood = !log.carbs || log.carbs === 0;
+        return hasReadings && reflectsISF && noFood;
     });
 
     let totalWeightedISF = 0;
@@ -117,6 +122,7 @@ const getInsulinSuggestion = async (userId, currentGlucose, carbs = 0) => {
     const data = userDoc.data();
     const health = data.health || {};
     const lifestyle = data.lifestyle || {};
+    const insulin = data.insulin || {};
     const stats = data.stats || {};
 
     const targetMin = health.target_glucose_min || 80;
@@ -165,10 +171,10 @@ const getInsulinSuggestion = async (userId, currentGlucose, carbs = 0) => {
     let isf = stats.avg_isf;
     let isfSource = 'Personal';
     if (!isf || isf <= 0) {
-        const weight = health.weight || 70;
-        const estimatedTDD = weight * 0.5;
-        isf = 1700 / estimatedTDD;
-        isfSource = 'Estimated (1700 Rule)';
+        // Preference: Actual Daily Dose > Weight-based guess > Default
+        const tdd = parseFloat(insulin.daily_dose) || (parseFloat(health.weight) * 0.5) || 50; 
+        isf = 1700 / tdd;
+        isfSource = insulin.daily_dose ? 'Estimated (Profile Daily Dose)' : 'Estimated (Weight Formula)';
     }
 
     // CIR: Carb-to-Insulin Ratio (How many grams 1 unit covers)
