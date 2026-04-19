@@ -36,10 +36,9 @@ const createLog = async (req, res) => {
 
         await logRef.set(logData);
 
-        // ALWAYS recalculate if we have a before/after pair — essential for learning CIR from spikes
-        if (glucose_before && glucose_after) {
-            await reCalculateUserStats(userId);
-        }
+        // Always recalculate — any log counts toward streak.
+        // ISF/CIR learning inside reCalculateUserStats filters for valid before/after pairs internally.
+        await reCalculateUserStats(userId);
 
         res.status(201).json({ message: 'Log created successfully', isf });
     } catch (error) {
