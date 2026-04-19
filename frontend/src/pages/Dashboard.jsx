@@ -259,8 +259,24 @@ const Dashboard = ({ user, setUser }) => {
             {suggestion && (
               <div className="animate-fade-in" style={{ padding: '20px', borderRadius: 'var(--radius)', background: 'hsla(210, 100%, 50%, 0.15)', border: '1px solid hsla(210, 100%, 50%, 0.3)' }}>
                 {suggestion.alert ? (
-                  <div style={{ color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>
-                    <AlertTriangle size={20} /> {suggestion.alert}
+                  <div style={{ 
+                    background: 'var(--danger)', 
+                    color: 'white', 
+                    padding: '20px', 
+                    borderRadius: 'var(--radius)',
+                    textAlign: 'center',
+                    boxShadow: '0 0 20px rgba(239, 68, 68, 0.4)'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', fontSize: '1.3rem', fontWeight: '900', marginBottom: '10px' }}>
+                      <AlertTriangle size={28} /> {suggestion.alert}
+                    </div>
+                    <p style={{ fontSize: '1.05rem', fontWeight: '600', margin: '0 0 15px 0' }}>{suggestion.reason || 'Critical sugar level.'}</p>
+                    <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px', fontSize: '0.9rem', textAlign: 'left' }}>
+                      <strong style={{ display: 'block', marginBottom: '5px' }}>🚑 Emergency 15-15 Rule Action:</strong>
+                      1. Eat 15g of fast carbs NOW (e.g., 1/2 cup juice, 1 tbsp honey).<br/>
+                      2. DO NOT inject any insulin.<br/>
+                      3. Wait 15 minutes, then check sugar again.
+                    </div>
                   </div>
                 ) : (
                   <>
