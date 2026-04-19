@@ -24,11 +24,13 @@ ChartJS.register(
 
 const GlucoseChart = ({ data }) => {
   const chartData = {
-    labels: data.map(log => new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })),
     datasets: [
       {
         label: 'Before Reading',
-        data: data.map(log => log.glucose_before),
+        data: data.map(log => ({
+          x: new Date(log.timestamp).getTime(),
+          y: log.glucose_before
+        })),
         borderColor: 'hsl(210, 100%, 50%)',
         backgroundColor: 'hsla(210, 100%, 50%, 0.1)',
         fill: true,
@@ -38,7 +40,14 @@ const GlucoseChart = ({ data }) => {
       },
       {
         label: 'After Reading',
-        data: data.map(log => log.glucose_after),
+        data: data
+          .filter(log => log.glucose_after !== null)
+          .map(log => ({
+            x: log.after_timestamp 
+              ? new Date(log.after_timestamp).getTime() 
+              : new Date(log.timestamp).getTime() + (2 * 60 * 60 * 1000), // Fallback to 2h later
+            y: log.glucose_after
+          })),
         borderColor: 'hsl(140, 100%, 50%)',
         backgroundColor: 'hsla(140, 100%, 50%, 0.1)',
         fill: true,
@@ -76,6 +85,12 @@ const GlucoseChart = ({ data }) => {
         bodyColor: 'hsl(210, 100%, 80%)',
         borderColor: 'hsla(222, 47%, 25%, 0.5)',
         borderWidth: 1,
+        callbacks: {
+          title: (context) => {
+            const date = new Date(context[0].parsed.x);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          }
+        }
       }
     },
     scales: {
@@ -89,11 +104,15 @@ const GlucoseChart = ({ data }) => {
         }
       },
       x: {
+        type: 'linear',
         grid: {
           display: false,
         },
         ticks: {
           color: 'hsl(0, 0%, 70%)',
+          callback: (value) => {
+            return new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          }
         }
       }
     }

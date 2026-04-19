@@ -23,6 +23,7 @@ const createLog = async (req, res) => {
             user_id: userId,
             glucose_before: glucose_before ? parseFloat(glucose_before) : null,
             glucose_after: glucose_after ? parseFloat(glucose_after) : null,
+            after_timestamp: glucose_after ? new Date().toISOString() : null,
             insulin_units: total,
             insulin_rapid: rapid,
             insulin_long: long,
@@ -196,7 +197,7 @@ const updateLog = async (req, res) => {
             isf = calculateISF(glucose_before, glucose_after, rapid);
         }
 
-        await logRef.update({
+        const updateData = {
             glucose_before: glucose_before ? parseFloat(glucose_before) : null,
             glucose_after: glucose_after ? parseFloat(glucose_after) : null,
             insulin_units: total,
@@ -207,7 +208,14 @@ const updateLog = async (req, res) => {
             food_description,
             activity_level,
             isf
-        });
+        };
+
+        // Set after_timestamp if glucose_after is newly added
+        if (glucose_after && !logDoc.data().after_timestamp) {
+            updateData.after_timestamp = new Date().toISOString();
+        }
+
+        await logRef.update(updateData);
 
         await reCalculateUserStats(userId);
         res.json({ message: 'Log updated successfully', isf });
