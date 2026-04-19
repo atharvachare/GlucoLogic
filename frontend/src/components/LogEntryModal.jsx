@@ -56,10 +56,10 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
     // 1. Calculate new portion counts
     const newPortions = { ...portions, [id]: Math.max(0, portions[id] + delta) };
     setPortions(newPortions);
-    
+
     // 2. Calculate total carbs
     const totalCarbs = PORTION_DATA.reduce((sum, item) => sum + (newPortions[item.id] * item.grams), 0);
-    
+
     // 3. Generate Auto-Description (e.g. "2x 🫓 Roti, 1x 🥣 Dal Bowl")
     const descriptionArr = [];
     PORTION_DATA.forEach(item => {
@@ -71,8 +71,8 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
     const finalDescription = descriptionArr.join(', ');
 
     // 4. Update the combined form data
-    setFormData(prev => ({ 
-      ...prev, 
+    setFormData(prev => ({
+      ...prev,
       carbs: totalCarbs,
       food_description: finalDescription
     }));
@@ -97,7 +97,7 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
         await api.put(`/logs/${editData.id}`, payload);
       } else {
         await api.post('/logs', payload);
-        
+
         // Schedule reminder for 2 hours later...
         if (payload.insulin_units > 0 && !payload.glucose_after) {
           if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
@@ -110,7 +110,7 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
           }
         }
       }
-      
+
       onLogAdded();
       onClose();
     } catch (err) {
@@ -134,7 +134,7 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
         </button>
 
         <h2 style={{ marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          {editData ? <Edit3 className="text-primary" /> : <BookOpen className="text-primary" />} 
+          {editData ? <Edit3 className="text-primary" /> : <BookOpen className="text-primary" />}
           {editData ? 'Edit Entry' : 'New Entry'}
         </h2>
 
@@ -146,9 +146,9 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
             </label>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               {PORTION_DATA.map(item => (
-                <div key={item.id} style={{ 
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
-                  padding: '10px', background: 'hsla(0,0%,100%,0.05)', borderRadius: '12px' 
+                <div key={item.id} style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  padding: '10px', background: 'hsla(0,0%,100%,0.05)', borderRadius: '12px'
                 }}>
                   <span style={{ fontSize: '0.9rem' }}>{item.label}</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -159,13 +159,13 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
                 </div>
               ))}
             </div>
-            
+
             <div style={{ marginTop: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span className="text-dim">Estimated Carbs:</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <input 
-                  type="number" className="input-field" style={{ width: '100px', textAlign: 'center', fontWeight: 'bold' }} 
-                  value={formData.carbs} onChange={(e) => setFormData({...formData, carbs: e.target.value})}
+                <input
+                  type="number" className="input-field" style={{ width: '100px', textAlign: 'center', fontWeight: 'bold' }}
+                  value={formData.carbs} onChange={(e) => setFormData({ ...formData, carbs: e.target.value })}
                 />
                 <span style={{ fontWeight: 'bold', color: 'var(--primary)' }}>grams</span>
               </div>
@@ -177,35 +177,35 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>Glucose (Pre-Meal)</label>
               <div style={{ position: 'relative' }}>
                 <Droplets size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-dim)' }} />
-                <input 
+                <input
                   type="number" className="input-field" style={{ paddingLeft: '35px' }} placeholder="mg/dL"
-                  value={formData.glucose_before} onChange={(e) => setFormData({...formData, glucose_before: e.target.value})}
+                  value={formData.glucose_before} onChange={(e) => setFormData({ ...formData, glucose_before: e.target.value })}
                 />
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-               <div>
-                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>Rapid Acting</label>
-                  <input 
-                    type="number" step="0.5" className="input-field" placeholder="Meal"
-                    value={formData.insulin_rapid} onChange={(e) => setFormData({...formData, insulin_rapid: e.target.value})}
-                  />
-               </div>
-               <div>
-                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>Long Acting</label>
-                  <input 
-                    type="number" step="0.5" className="input-field" placeholder="Basal"
-                    value={formData.insulin_long} onChange={(e) => setFormData({...formData, insulin_long: e.target.value})}
-                  />
-               </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>Rapid Acting</label>
+                <input
+                  type="number" step="0.5" className="input-field" placeholder="Meal"
+                  value={formData.insulin_rapid} onChange={(e) => setFormData({ ...formData, insulin_rapid: e.target.value })}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>Long Acting</label>
+                <input
+                  type="number" step="0.5" className="input-field" placeholder="Basal"
+                  value={formData.insulin_long} onChange={(e) => setFormData({ ...formData, insulin_long: e.target.value })}
+                />
+              </div>
             </div>
           </div>
 
           <div style={{ marginBottom: '15px' }}>
             <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>Glucose (2-3 Hours After)</label>
-            <input 
+            <input
               type="number" className="input-field" placeholder="mg/dL (Optional - Needed for learning ISF)"
-              value={formData.glucose_after} onChange={(e) => setFormData({...formData, glucose_after: e.target.value})}
+              value={formData.glucose_after} onChange={(e) => setFormData({ ...formData, glucose_after: e.target.value })}
             />
           </div>
 
@@ -214,9 +214,9 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>Meal Type</label>
               <div style={{ position: 'relative' }}>
                 <Utensils size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-dim)' }} />
-                <select 
+                <select
                   className="input-field" style={{ paddingLeft: '35px' }}
-                  value={formData.meal_type} onChange={(e) => setFormData({...formData, meal_type: e.target.value})}
+                  value={formData.meal_type} onChange={(e) => setFormData({ ...formData, meal_type: e.target.value })}
                 >
                   <option value="breakfast">Breakfast</option>
                   <option value="lunch">Lunch</option>
@@ -229,9 +229,9 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>Activity Level</label>
               <div style={{ position: 'relative' }}>
                 <Activity size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-dim)' }} />
-                <select 
+                <select
                   className="input-field" style={{ paddingLeft: '35px' }}
-                  value={formData.activity_level} onChange={(e) => setFormData({...formData, activity_level: e.target.value})}
+                  value={formData.activity_level} onChange={(e) => setFormData({ ...formData, activity_level: e.target.value })}
                 >
                   <option value="none">None</option>
                   <option value="light">Light</option>
@@ -244,16 +244,16 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
 
           <div style={{ marginBottom: '25px' }}>
             <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>What did you eat?</label>
-            <textarea 
+            <textarea
               className="input-field" style={{ height: '80px', resize: 'none' }} placeholder="Description..."
-              value={formData.food_description} onChange={(e) => setFormData({...formData, food_description: e.target.value})}
+              value={formData.food_description} onChange={(e) => setFormData({ ...formData, food_description: e.target.value })}
             ></textarea>
           </div>
 
           <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} disabled={loading}>
             {loading ? 'Saving...' : (editData ? 'Update Entry' : <><Send size={18} /> Save Entry</>)}
           </button>
-          
+
           <p style={{ fontSize: '0.75rem', textAlign: 'center', marginTop: '15px', color: 'var(--text-dim)' }}>
             Note: ISF is only calculated when both "before" and "after" readings are provided.
           </p>

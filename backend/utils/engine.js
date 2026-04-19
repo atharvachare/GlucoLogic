@@ -58,7 +58,7 @@ const reCalculateUserStats = async (userId) => {
             // correctionGap: How many units were missing (+) or extra (-)
             const correctionGap = rise / avgISF;
             const neededInsulin = rapid + correctionGap;
-            
+
             if (neededInsulin > 0) {
                 const cirCandidate = log.carbs / neededInsulin;
                 // Safety bound for CIR
@@ -72,8 +72,23 @@ const reCalculateUserStats = async (userId) => {
         avgCIR = totalCIRWeight > 0 ? totalWeightedCIR / totalCIRWeight : 0;
     }
 
+    // 3. Calculate Average Carbs per Meal Type
+    const mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
+    const mealStats = {};
+    mealTypes.forEach(type => {
+        const typeLogs = logs.filter(l => l.meal_type === type && l.carbs > 0);
+        if (typeLogs.length > 0) {
+            const sum = typeLogs.reduce((s, l) => s + l.carbs, 0);
+            mealStats[`avg_carbs_${type}`] = Math.round(sum / typeLogs.length);
+        } else {
+            // Defaults based on common patterns if no data
+            const defaults = { breakfast: 30, lunch: 50, dinner: 60, snack: 15 };
+            mealStats[`avg_carbs_${type}`] = defaults[type];
+        }
+    });
+
     let confidence = 'Low';
-    const validLogCount = isfLogs.length; 
+    const validLogCount = isfLogs.length;
     if (validLogCount >= 15) confidence = 'High';
     else if (validLogCount >= 5) confidence = 'Medium';
 
@@ -82,6 +97,7 @@ const reCalculateUserStats = async (userId) => {
         avg_cir: avgCIR,
         confidence_score: confidence,
         total_logs: logs.length,
+        meal_stats: mealStats,
         last_updated: new Date().toISOString()
     };
 
@@ -110,20 +126,20 @@ const getInsulinSuggestion = async (userId, currentGlucose, carbs = 0) => {
     // —— 1. FETCH IOB (Insulin on Board) ——
     const fourHoursAgo = new Date();
     fourHoursAgo.setHours(fourHoursAgo.getHours() - 4);
-    
+
     const recentLogsSnapshot = await db.collection('users').doc(userId).collection('logs')
         .where('timestamp', '>=', fourHoursAgo.toISOString())
         .get();
-        
+
     let iob = 0;
     const now = new Date();
     recentLogsSnapshot.forEach(doc => {
         const log = doc.data();
-        
+
         // IOB Tracking should ONLY consider Rapid-Acting insulin.
         // We prioritizing 'insulin_rapid' field, but fallback to 'insulin_units' for older logs.
         const rapidUnits = log.insulin_rapid || (log.insulin_type !== 'basal' ? log.insulin_units : 0);
-        
+
         if (rapidUnits > 0) {
             const logTime = new Date(log.timestamp);
             const hoursPassed = (now - logTime) / (1000 * 60 * 60);
@@ -157,11 +173,11 @@ const getInsulinSuggestion = async (userId, currentGlucose, carbs = 0) => {
 
     // CIR: Carb-to-Insulin Ratio (How many grams 1 unit covers)
     // Fallback: 1:15 is standard for most adults.
-    let cir = stats.avg_cir || 15; 
+    let cir = stats.avg_cir || 15;
     let cirSource = stats.avg_cir ? 'Personal' : 'Default (1:15)';
 
     // —— 4. CALCULATE DOSES ——
-    
+
     // A. Correction Dose (for high sugar)
     const dropNeeded = Math.max(0, currentGlucose - targetMid);
     let correctionDose = dropNeeded / isf;
@@ -214,7 +230,15 @@ const getInsulinSuggestion = async (userId, currentGlucose, carbs = 0) => {
         confidence: stats.confidence_score || 'Not enough data',
         iobAdjustment: iobAdjustmentMsg,
         activityAdjustment: activityAdjustmentMsg,
-        risk: currentGlucose > 250 ? 'High' : (currentGlucose > 180 ? 'Medium' : 'Low')
+        risk: currentGlucose > 250 ? 'High' : (currentGlucose > 180 ? 'Medium' : 'Low'),
+        mealStats: stats.meal_stats || { breakfast: 30, lunch: 50, dinner: 60, snack: 15 },
+        suggestedMealType: (() => {
+            const hour = new Date().getHours();
+            if (hour >= 6 && hour < 11) return 'breakfast';
+            if (hour >= 11 && hour < 16) return 'lunch';
+            if (hour >= 18 && hour < 23) return 'dinner';
+            return 'snack';
+        })()
     };
 };
 
