@@ -222,6 +222,15 @@ const Dashboard = ({ user, setUser }) => {
                     const mealStats = stats?.meal_stats || { avg_carbs_breakfast: 30, avg_carbs_lunch: 50, avg_carbs_dinner: 60 };
                     const carbVal = mealStats[`avg_carbs_${type}`] || (type === 'breakfast' ? 30 : type === 'lunch' ? 50 : 60);
 
+                    const getFoodEquivalent = (grams) => {
+                      if (grams <= 15) return '≈ 1 Roti';
+                      if (grams <= 30) return '≈ 2 Rotis';
+                      if (grams <= 45) return '≈ 2 Rotis + Dal';
+                      if (grams <= 60) return '≈ 2 Rotis + 1 Bowl Rice';
+                      if (grams <= 80) return '≈ 3 Rotis + Rice + Dal';
+                      return '≈ Large Meal';
+                    };
+
                     return (
                       <button 
                         key={type}
@@ -236,7 +245,10 @@ const Dashboard = ({ user, setUser }) => {
                           <Zap size={14} className="text-primary" />
                           Usual {type.charAt(0).toUpperCase() + type.slice(1)}
                         </span>
-                        <strong style={{ color: 'white' }}>{carbVal}g</strong>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                          <strong style={{ color: 'white' }}>{carbVal}g</strong>
+                          <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>{getFoodEquivalent(carbVal)}</span>
+                        </div>
                       </button>
                     );
                   })}
