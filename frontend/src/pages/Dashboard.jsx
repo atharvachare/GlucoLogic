@@ -283,9 +283,14 @@ const Dashboard = ({ user, setUser }) => {
                     <div style={{ marginBottom: '20px' }}>
                       <div style={{ fontSize: '0.9rem', color: 'var(--text-dim)', marginBottom: '5px' }}>Total Suggested Dose:</div>
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                        <span style={{ fontSize: '3.5rem', fontWeight: '800', lineHeight: '1' }}>{suggestion.suggestion}</span>
+                        <span style={{ fontSize: '3.5rem', fontWeight: '800', lineHeight: '1', color: suggestion.isCapped ? '#ffb74d' : 'white' }}>{suggestion.suggestion}</span>
                         <span style={{ fontSize: '1.2rem', color: 'var(--text-dim)' }}>Units</span>
                       </div>
+                      {suggestion.isCapped && (
+                        <div style={{ marginTop: '8px', color: '#ffb74d', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 'bold' }}>
+                          <AlertTriangle size={16} /> Safety Cap Reached (Max 20 U per dose)
+                        </div>
+                      )}
                     </div>
 
                     {/* Insight Text */}
