@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import Onboarding from '../components/Onboarding';
 import { Link } from 'react-router-dom';
+import logo from '../assets/logo.png';
 
 const HypoTimer = ({ lastLogTime }) => {
   const [timeLeft, setTimeLeft] = useState(0);
@@ -178,11 +179,14 @@ const Dashboard = ({ user, setUser }) => {
       <div className="container animate-fade-in" style={{ paddingBottom: '100px' }}>
         {/* Header */}
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px', paddingTop: '20px' }}>
-          <div>
-            <h1 style={{ fontSize: user.mode === 'kids' ? '2.5rem' : '2rem' }}>
-              {user.mode === 'kids' ? '🚀 Hero ' : 'Hello, '}{user.name}
-            </h1>
-            <p style={{ color: 'var(--text-dim)' }}>{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <img src={logo} alt="GlucoLogic" style={{ height: '60px', width: 'auto' }} />
+            <div>
+              <h1 style={{ fontSize: user.mode === 'kids' ? '2.5rem' : '2rem', lineHeight: '1.2' }}>
+                {user.mode === 'kids' ? '🚀 Hero ' : 'Hello, '}{user.name}
+              </h1>
+              <p style={{ color: 'var(--text-dim)' }}>{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
+            </div>
           </div>
           <div style={{ display: 'flex', gap: '15px' }}>
             <Link to="/profile" className="btn btn-outline"><UserIcon size={18} /> Profile</Link>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api';
 import { UserPlus, User, Mail, Lock, Activity, Scale, HeartPulse } from 'lucide-react';
+import logo from '../assets/logo.png';
 
 const Register = ({ setUser }) => {
   const [formData, setFormData] = useState({
@@ -42,6 +43,7 @@ const Register = ({ setUser }) => {
     <div className="container animate-fade-in" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', padding: '40px 20px' }}>
       <div className="glass-card" style={{ padding: '40px', width: '100%', maxWidth: '600px' }}>
         <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+          <img src={logo} alt="GlucoLogic" style={{ height: '70px', width: 'auto', marginBottom: '15px' }} />
           <h1 style={{ fontSize: '2.5rem', marginBottom: '10px' }}>Join the Journey</h1>
           <p style={{ color: 'var(--text-dim)' }}>Personalized health monitoring starts here</p>
         </div>

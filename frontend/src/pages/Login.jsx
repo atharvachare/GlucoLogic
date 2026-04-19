@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api';
 import { LogIn, UserPlus, Mail, Lock } from 'lucide-react';
+import logo from '../assets/logo.png';
 
 const Login = ({ setUser }) => {
   const [email, setEmail] = useState('');
@@ -32,6 +33,7 @@ const Login = ({ setUser }) => {
     <div className="container animate-fade-in" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
       <div className="glass-card" style={{ padding: '40px', width: '100%', maxWidth: '450px' }}>
         <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+          <img src={logo} alt="GlucoLogic" style={{ height: '80px', width: 'auto', marginBottom: '20px' }} />
           <h1 style={{ fontSize: '2.5rem', marginBottom: '10px' }}>Welcome Back</h1>
           <p style={{ color: 'var(--text-dim)' }}>Precision tracking for better health</p>
         </div>
