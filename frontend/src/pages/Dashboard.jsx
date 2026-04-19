@@ -153,21 +153,17 @@ const Dashboard = ({ user, setUser }) => {
         justifyContent: 'center', 
         alignItems: 'center', 
         background: 'var(--background)',
-        gap: '20px',
+        gap: '40px',
         textAlign: 'center',
         padding: '20px'
       }}>
-        <div className="spin" style={{ 
-          width: '50px', 
-          height: '50px', 
-          border: '4px solid var(--glass-border)', 
-          borderTopColor: 'var(--primary)', 
-          borderRadius: '50%' 
-        }} />
-        <div>
-          <h2 style={{ marginBottom: '8px' }}>Waking up database...</h2>
-          <p style={{ color: 'var(--text-dim)', maxWidth: '300px' }}>
-            Our server is warming up on Render's free tier. This usually takes 30-40 seconds.
+        <div style={{ animation: 'zoomIn 1.5s ease-out forwards, float 3s ease-in-out infinite 1.5s' }}>
+          <img src={logo} alt="GlucoLogic" style={{ height: '120px', width: 'auto' }} />
+        </div>
+        <div className="animate-fade-in" style={{ animationDelay: '0.8s' }}>
+          <h1 style={{ fontSize: '2.5rem', marginBottom: '10px' }}>Welcome to GlucoLogic</h1>
+          <p style={{ color: 'var(--text-dim)', maxWidth: '400px', margin: '0 auto' }}>
+            Preparing your personalized insulin profile...
           </p>
         </div>
       </div>

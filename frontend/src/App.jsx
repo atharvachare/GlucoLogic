@@ -19,7 +19,31 @@ function App() {
     setLoading(false);
   }, []);
 
-  if (loading) return <div style={{ color: 'white', padding: '20px' }}>Loading...</div>;
+  if (loading) {
+    return (
+      <div style={{ 
+        height: '100vh', 
+        display: 'flex', 
+        flexDirection: 'column',
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        background: 'var(--background)',
+        gap: '40px',
+        textAlign: 'center',
+        padding: '20px'
+      }}>
+        <div style={{ animation: 'zoomIn 1.5s ease-out forwards, float 3s ease-in-out infinite 1.5s' }}>
+          <img src="/src/assets/logo.png" alt="GlucoLogic" style={{ height: '100px', width: 'auto' }} />
+        </div>
+        <div className="animate-fade-in" style={{ animationDelay: '0.8s' }}>
+          <h1 style={{ fontSize: '2rem', marginBottom: '10px' }}>GlucoLogic</h1>
+          <p style={{ color: 'var(--text-dim)', maxWidth: '400px', margin: '0 auto' }}>
+            Authenticating...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Routes>
