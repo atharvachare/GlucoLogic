@@ -72,6 +72,8 @@ const Dashboard = ({ user, setUser }) => {
   const [lifestyle, setLifestyle] = useState({ activity_level: 'None' });
   const [risk, setRisk] = useState('Low');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
+  const [showHistory, setShowHistory] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [currentGlucose, setCurrentGlucose] = useState('');
   const [currentCarbs, setCurrentCarbs] = useState('');
@@ -105,6 +107,8 @@ const Dashboard = ({ user, setUser }) => {
       }
     } catch (err) {
       console.error('Failed to fetch dashboard data', err);
+    } finally {
+      setPageLoading(false);
     }
   };
 
@@ -138,6 +142,36 @@ const Dashboard = ({ user, setUser }) => {
       console.error('Failed to update mode', err);
     }
   };
+
+  if (pageLoading) {
+    return (
+      <div style={{ 
+        height: '100vh', 
+        display: 'flex', 
+        flexDirection: 'column',
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        background: 'var(--background)',
+        gap: '20px',
+        textAlign: 'center',
+        padding: '20px'
+      }}>
+        <div className="spin" style={{ 
+          width: '50px', 
+          height: '50px', 
+          border: '4px solid var(--glass-border)', 
+          borderTopColor: 'var(--primary)', 
+          borderRadius: '50%' 
+        }} />
+        <div>
+          <h2 style={{ marginBottom: '8px' }}>Waking up database...</h2>
+          <p style={{ color: 'var(--text-dim)', maxWidth: '300px' }}>
+            Our server is warming up on Render's free tier. This usually takes 30-40 seconds.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={user.mode === 'kids' ? 'kids-mode' : ''} style={{ minHeight: '100vh', transition: 'all 0.5s ease' }}>
