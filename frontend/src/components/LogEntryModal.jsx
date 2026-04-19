@@ -6,6 +6,8 @@ const PORTION_DATA = [
   { id: 'roti', label: '🫓 Roti', grams: 20 },
   { id: 'rice', label: '🍚 Rice Bowl', grams: 45 },
   { id: 'dal', label: '🥣 Dal Bowl', grams: 15 },
+  { id: 'sabzi', label: '🥗 Sabzi Bowl', grams: 12 },
+  { id: 'curd', label: '🥣 Curd/Dahi', grams: 8 },
   { id: 'milk', label: '🥛 Milk', grams: 12 },
 ];
 
@@ -20,7 +22,7 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
     food_description: '',
     activity_level: 'none'
   });
-  const [portions, setPortions] = useState({ roti: 0, rice: 0, dal: 0, milk: 0 });
+  const [portions, setPortions] = useState({ roti: 0, rice: 0, dal: 0, sabzi: 0, curd: 0, milk: 0 });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -46,7 +48,7 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
         food_description: '',
         activity_level: 'none'
       });
-      setPortions({ roti: 0, rice: 0, dal: 0, milk: 0 });
+      setPortions({ roti: 0, rice: 0, dal: 0, sabzi: 0, curd: 0, milk: 0 });
     }
   }, [editData, isOpen]);
 
