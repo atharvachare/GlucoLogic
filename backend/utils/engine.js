@@ -78,40 +78,46 @@ const reCalculateUserStats = async (userId) => {
         finalISF = targetISF;
     }
 
-    // 2. Calculate Personal CIR (Carb-to-Insulin Ratio)
-    let avgCIR = currentStats.avg_cir || 15;
-    if (finalISF > 0) {
-        const cirLogs = logs.filter(log => {
+    // 2. Identify CIR Logs (Meal + Dose + After check)
+    const cirLogs = logs.filter(log => {
+        const rapid = log.insulin_rapid || (log.insulin_type !== 'basal' ? log.insulin_units : 0);
+        return log.carbs > 0 && rapid > 0 && log.glucose_before && log.glucose_after;
+    });
+
+    // 3. Solve for CIR
+    // Use learned ISF if available, otherwise use Profile-based estimate as anchor
+    let targetCIR = currentStats.avg_cir || 15;
+    if (cirLogs.length >= 3) {
+        const insulinData = userDoc.data().insulin || {};
+        const health = userDoc.data().health || {};
+        const activeISF = finalISF || (parseFloat(insulinData.correction_factor)) || (1700 / (parseFloat(insulinData.daily_dose) || (parseFloat(health.weight) * 0.5) || 50));
+        
+        let totalWeightedCIR = 0;
+        let totalCIRWeight = 0;
+        
+        cirLogs.forEach((log, index) => {
             const rapid = log.insulin_rapid || (log.insulin_type !== 'basal' ? log.insulin_units : 0);
-            return log.carbs > 0 && rapid > 0 && log.glucose_before && log.glucose_after;
-        });
+            const rise = log.glucose_after - log.glucose_before;
+            const correctionGap = rise / activeISF;
+            const neededInsulin = rapid + correctionGap;
 
-        if (cirLogs.length > 0) {
-            let totalWeightedCIR = 0;
-            let totalCIRWeight = 0;
-            cirLogs.forEach((log, index) => {
-                const rapid = log.insulin_rapid || (log.insulin_type !== 'basal' ? log.insulin_units : 0);
-                const rise = log.glucose_after - log.glucose_before;
-                const correctionGap = rise / finalISF;
-                const neededInsulin = rapid + correctionGap;
-
-                if (neededInsulin > 0) {
-                    const cirCandidate = log.carbs / neededInsulin;
-                    if (cirCandidate >= 3 && cirCandidate <= 100) {
-                        const weight = index < 10 ? 2 : 1;
-                        totalWeightedCIR += cirCandidate * weight;
-                        totalCIRWeight += weight;
-                    }
+            if (neededInsulin > 0) {
+                const cirCandidate = log.carbs / neededInsulin;
+                if (cirCandidate >= 3 && cirCandidate <= 100) {
+                    const weight = index < 10 ? 2 : 1;
+                    totalWeightedCIR += cirCandidate * weight;
+                    totalCIRWeight += weight;
                 }
-            });
-            const targetCIR = totalCIRWeight > 0 ? totalWeightedCIR / totalCIRWeight : 15;
-            // Dampen CIR too
-            const cirDiff = targetCIR - avgCIR;
-            avgCIR = avgCIR + (cirDiff * SAFETY_CONFIG.DAMPING_FACTOR);
-        }
+            }
+        });
+        
+        const calculatedTargetCIR = totalCIRWeight > 0 ? totalWeightedCIR / totalCIRWeight : targetCIR;
+        // Dampen the change
+        const diff = calculatedTargetCIR - targetCIR;
+        targetCIR = targetCIR + (diff * SAFETY_CONFIG.DAMPING_FACTOR);
     }
 
-    // 3. Meal Stats
+    // 4. Meal Pattern Stats
     const mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
     const mealStats = {};
     mealTypes.forEach(type => {
@@ -125,13 +131,14 @@ const reCalculateUserStats = async (userId) => {
         }
     });
 
+    // 5. Confidence Scoring
     let confidence = 'Low';
-    if (isfLogs.length >= 10) confidence = 'High';
-    else if (isfLogs.length >= 3) confidence = 'Medium';
+    if (isfLogs.length >= 3 || cirLogs.length >= 5) confidence = 'Medium';
+    if (isfLogs.length >= 8 && cirLogs.length >= 10) confidence = 'High';
 
     const stats = {
         avg_isf: finalISF,
-        avg_cir: avgCIR,
+        avg_cir: targetCIR,
         confidence_score: confidence,
         total_logs: logs.length,
         meal_stats: mealStats,
