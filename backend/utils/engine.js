@@ -172,17 +172,23 @@ const getInsulinSuggestion = async (userId, currentGlucose, carbs = 0) => {
         }
     });
 
-    // 2. Get Clinical Benchmarks
-    let isf = stats.avg_isf;
-    let isfSource = 'Safe Learned';
+    // 2. Get Clinical Benchmarks (Manual Profile > Learned > Fallback)
+    let isf = parseFloat(insulinData.correction_factor) || stats.avg_isf;
+    let isfSource = parseFloat(insulinData.correction_factor) ? 'Doctor Set (Profile)' : (stats.avg_isf ? 'Safe Learned' : 'Calculated from Profile');
+    
     if (!isf || isf <= 0) {
         const tdd = parseFloat(insulinData.daily_dose) || (parseFloat(health.weight) * 0.5) || 50; 
         isf = 1700 / tdd;
-        isfSource = 'Calculated from Profile';
+        isfSource = 'Estimated from Weight/TDD';
     }
 
-    let cir = stats.avg_cir || 15;
-    let cirSource = stats.avg_cir ? 'Safe Learned' : 'Default Ratio';
+    let cir = parseFloat(insulinData.carb_ratio) || stats.avg_cir || 15;
+    let cirSource = parseFloat(insulinData.carb_ratio) ? 'Doctor Set (Profile)' : (stats.avg_cir ? 'Safe Learned' : 'Default Ratio');
+
+    // Force "High" confidence if using a Doctor's manually set ratio
+    const finalConfidence = (isfSource === 'Doctor Set (Profile)' || cirSource === 'Doctor Set (Profile)') 
+        ? 'High (Doctor Set)' 
+        : (stats.confidence_score || 'Low');
 
     // 3. Trend Detection (Predictive)
     const lastLogs = await db.collection('users').doc(userId).collection('logs')
@@ -232,7 +238,7 @@ const getInsulinSuggestion = async (userId, currentGlucose, carbs = 0) => {
         factors: { isf, isfSource, cir, cirSource },
         target: targetMid,
         risk: currentGlucose > 250 ? 'High' : (trendMsg ? 'Warning' : 'Normal'),
-        confidence: stats.confidence_score || 'Low'
+        confidence: finalConfidence
     };
 };
 
