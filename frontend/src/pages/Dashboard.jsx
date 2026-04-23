@@ -443,23 +443,34 @@ const Dashboard = ({ user, setUser }) => {
               {/* Learning Progress Bar */}
               <div style={{ padding: '15px', background: 'hsla(0,0%,100%,0.03)', borderRadius: 'var(--radius)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.85rem' }}>
-                  <span>🧬 Learning Progress</span>
-                  <span className="text-primary">{Math.min(100, Math.floor((stats.total_logs / 20) * 100))}%</span>
+                  <span>🧬 Brain Learning</span>
+                  <span className="text-primary">{Math.min(100, Math.floor((stats.total_logs / 20) * 100))}% Data</span>
                 </div>
                 <div style={{ height: '8px', background: 'hsla(0,0%,100%,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
                   <div style={{
                     height: '100%',
                     background: 'var(--primary)',
                     width: `${Math.min(100, (stats.total_logs / 20) * 100)}%`,
-                    transition: 'width 1s ease-out',
-                    boxShadow: '0 0 10px var(--primary)'
+                    transition: 'width 1s ease-out'
                   }}></div>
                 </div>
-                <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', marginTop: '8px' }}>
-                  {stats.total_logs >= 20
-                    ? "Max accuracy reached! System knows your body well."
-                    : `Log ${20 - stats.total_logs} more meals to unlock High Precision mode.`}
+                <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', marginTop: '8px', lineHeight: '1.4' }}>
+                  {stats.confidence_score === 'High' 
+                    ? "🚀 Brain is Sharp! Using Personalized Math." 
+                    : `Need ${stats.confidence_score === 'Medium' ? '5' : '3'} more **Correction Logs (No Food)** to reach ${stats.confidence_score === 'Medium' ? 'High' : 'Medium'} confidence.`}
                 </p>
+                <button 
+                  className="btn btn-outline" 
+                  style={{ width: '100%', fontSize: '0.7rem', marginTop: '10px', height: '30px', padding: '0' }}
+                  onClick={async () => {
+                    try {
+                      await api.post('/logs/migrate-isf');
+                      window.location.reload();
+                    } catch (err) { alert('Sync failed'); }
+                  }}
+                >
+                  🔄 Sync Brain with History
+                </button>
               </div>
             </div>
           </div>
