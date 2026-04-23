@@ -218,11 +218,13 @@ const getInsulinSuggestion = async (userId, currentGlucose, carbs = 0) => {
     const netCorrection = Math.max(0, rawCorrection - iob);
     const mealDose = carbs / cir;
 
-    let totalDose = netCorrection + mealDose;
-
-    // 4. Safety Logic
-    const correctionCapped = netCorrection > SAFETY_CONFIG.MAX_CORRECTION_DOSE;
-    const finalCorrection = Math.min(netCorrection, SAFETY_CONFIG.MAX_CORRECTION_DOSE);
+    // 4. Adaptive Safety Logic
+    // Cap is 15% of TDD (min 6u). If TDD is 100, cap is 15u.
+    const userTDD = parseFloat(insulinData.daily_dose) || (parseFloat(health.weight) * 0.5) || 50;
+    const dynamicCorrectionCap = Math.max(6.0, userTDD * 0.15);
+    
+    const correctionCapped = netCorrection > dynamicCorrectionCap;
+    const finalCorrection = Math.min(netCorrection, dynamicCorrectionCap);
     
     let finalTotal = finalCorrection + mealDose;
     const totalCapped = finalTotal > SAFETY_CONFIG.MAX_TOTAL_DOSE;
@@ -233,7 +235,7 @@ const getInsulinSuggestion = async (userId, currentGlucose, carbs = 0) => {
         isCapped: correctionCapped || totalCapped,
         trendAlert: trendMsg,
         caps: {
-            correction: SAFETY_CONFIG.MAX_CORRECTION_DOSE,
+            correction: parseFloat(dynamicCorrectionCap.toFixed(1)),
             total: SAFETY_CONFIG.MAX_TOTAL_DOSE
         },
         breakdown: {
