@@ -1,22 +1,34 @@
 const { db } = require('../firebase');
 
+// --- CLINICAL SAFETY CONFIG ---
+const SAFETY_CONFIG = {
+    MAX_CORRECTION_DOSE: 6.0,    // Absolute cap for correction units
+    MAX_TOTAL_DOSE: 20.0,         // Absolute cap for total dose
+    MIN_ISF: 20,                  // Never assume more resistant than 1:20
+    MAX_ISF: 150,                 // Never assume more sensitive than 1:150
+    DAMPING_FACTOR: 0.2,          // Only change stats by 20% max per day
+    OUTLIER_DEVIATION: 0.5        // Ignore logs that deviate > 50% from current avg
+};
+
 /**
- * Calculates Insulin Sensitivity Factor (ISF) for a single log entry.
- * Formula: ISF = (before_glucose - after_glucose) / insulin_units
- * Returns null if glucose did not drop (meal spike or other factors).
+ * Calculates Insulin Sensitivity Factor (ISF) with safety limits.
  */
 const calculateISF = (before, after, units) => {
     if (!units || units <= 0) return null;
     const drop = before - after;
-    // Only compute ISF when glucose actually dropped — a rise means meal/other factors dominated
-    return drop > 0 ? drop / units : null;
+    if (drop <= 0) return null;
+    const calculated = drop / units;
+    // Bind to clinical reality
+    return Math.max(SAFETY_CONFIG.MIN_ISF, Math.min(SAFETY_CONFIG.MAX_ISF, calculated));
 };
 
 /**
- * Re-calculates global user stats (avg ISF and avg CIR) based on history in Firestore.
- * Uses a weighted average — recent 10 logs are counted double (2x weight).
+ * Re-calculates global user stats with Outlier Filtering and Damping.
  */
 const reCalculateUserStats = async (userId) => {
+    const userDoc = await db.collection('users').doc(userId).get();
+    const currentStats = userDoc.data().stats || {};
+    
     const logsSnapshot = await db.collection('users').doc(userId).collection('logs')
         .orderBy('timestamp', 'desc')
         .limit(50)
@@ -24,9 +36,7 @@ const reCalculateUserStats = async (userId) => {
 
     const logs = logsSnapshot.docs.map(doc => doc.data());
 
-    // 1. Calculate Personal ISF (Sensitivity)
-    // IMPORTANT: Only learn ISF from logs with NO food (carbs === 0).
-    // Food masks the true insulin effect, causing accuracy drag.
+    // 1. Calculate Personal ISF with Outlier Guard
     const isfLogs = logs.filter(log => {
         const rapid = log.insulin_rapid || (log.insulin_type !== 'basal' ? log.insulin_units : 0);
         const hasReadings = log.glucose_before && log.glucose_after;
@@ -35,49 +45,73 @@ const reCalculateUserStats = async (userId) => {
         return hasReadings && reflectsISF && noFood;
     });
 
-    let totalWeightedISF = 0;
-    let totalISFWeight = 0;
-    isfLogs.forEach((log, index) => {
-        const rapid = log.insulin_rapid || (log.insulin_type !== 'basal' ? log.insulin_units : 0);
-        const drop = log.glucose_before - log.glucose_after;
-        const efficiency = drop / rapid;
-        const weight = index < 10 ? 2 : 1;
-        totalWeightedISF += efficiency * weight;
-        totalISFWeight += weight;
-    });
-    const avgISF = totalISFWeight > 0 ? totalWeightedISF / totalISFWeight : 0;
+    let targetISF = 0;
+    if (isfLogs.length > 0) {
+        let totalWeightedISF = 0;
+        let totalISFWeight = 0;
+        const currentAvg = currentStats.avg_isf || 50;
+
+        isfLogs.forEach((log, index) => {
+            const rapid = log.insulin_rapid || (log.insulin_type !== 'basal' ? log.insulin_units : 0);
+            const drop = log.glucose_before - log.glucose_after;
+            const efficiency = drop / rapid;
+
+            // --- OUTLIER FILTER ---
+            // If efficiency is 50% higher or lower than current average, it's likely sick day/bad site
+            const deviation = Math.abs(efficiency - currentAvg) / currentAvg;
+            if (deviation > SAFETY_CONFIG.OUTLIER_DEVIATION && isfLogs.length > 5) return;
+
+            const weight = index < 10 ? 2 : 1;
+            totalWeightedISF += efficiency * weight;
+            totalISFWeight += weight;
+        });
+        targetISF = totalISFWeight > 0 ? totalWeightedISF / totalISFWeight : currentAvg;
+    }
+
+    // --- DAMPING ---
+    // Never jump to a new ISF instantly. Move slowly toward it.
+    let finalISF = currentStats.avg_isf || targetISF;
+    if (targetISF > 0 && currentStats.avg_isf) {
+        const diff = targetISF - currentStats.avg_isf;
+        finalISF = currentStats.avg_isf + (diff * SAFETY_CONFIG.DAMPING_FACTOR);
+    } else if (targetISF > 0) {
+        finalISF = targetISF;
+    }
 
     // 2. Calculate Personal CIR (Carb-to-Insulin Ratio)
-    let avgCIR = 0;
-    if (avgISF > 0) {
+    let avgCIR = currentStats.avg_cir || 15;
+    if (finalISF > 0) {
         const cirLogs = logs.filter(log => {
             const rapid = log.insulin_rapid || (log.insulin_type !== 'basal' ? log.insulin_units : 0);
             return log.carbs > 0 && rapid > 0 && log.glucose_before && log.glucose_after;
         });
 
-        let totalWeightedCIR = 0;
-        let totalCIRWeight = 0;
-        cirLogs.forEach((log, index) => {
-            const rapid = log.insulin_rapid || (log.insulin_type !== 'basal' ? log.insulin_units : 0);
-            const rise = log.glucose_after - log.glucose_before;
-            // correctionGap: How many units were missing (+) or extra (-)
-            const correctionGap = rise / avgISF;
-            const neededInsulin = rapid + correctionGap;
+        if (cirLogs.length > 0) {
+            let totalWeightedCIR = 0;
+            let totalCIRWeight = 0;
+            cirLogs.forEach((log, index) => {
+                const rapid = log.insulin_rapid || (log.insulin_type !== 'basal' ? log.insulin_units : 0);
+                const rise = log.glucose_after - log.glucose_before;
+                const correctionGap = rise / finalISF;
+                const neededInsulin = rapid + correctionGap;
 
-            if (neededInsulin > 0) {
-                const cirCandidate = log.carbs / neededInsulin;
-                // Safety bound for CIR
-                if (cirCandidate >= 3 && cirCandidate <= 100) {
-                    const weight = index < 10 ? 2 : 1;
-                    totalWeightedCIR += cirCandidate * weight;
-                    totalCIRWeight += weight;
+                if (neededInsulin > 0) {
+                    const cirCandidate = log.carbs / neededInsulin;
+                    if (cirCandidate >= 3 && cirCandidate <= 100) {
+                        const weight = index < 10 ? 2 : 1;
+                        totalWeightedCIR += cirCandidate * weight;
+                        totalCIRWeight += weight;
+                    }
                 }
-            }
-        });
-        avgCIR = totalCIRWeight > 0 ? totalWeightedCIR / totalCIRWeight : 0;
+            });
+            const targetCIR = totalCIRWeight > 0 ? totalWeightedCIR / totalCIRWeight : 15;
+            // Dampen CIR too
+            const cirDiff = targetCIR - avgCIR;
+            avgCIR = avgCIR + (cirDiff * SAFETY_CONFIG.DAMPING_FACTOR);
+        }
     }
 
-    // 3. Calculate Average Carbs per Meal Type
+    // 3. Meal Stats
     const mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
     const mealStats = {};
     mealTypes.forEach(type => {
@@ -86,19 +120,17 @@ const reCalculateUserStats = async (userId) => {
             const sum = typeLogs.reduce((s, l) => s + l.carbs, 0);
             mealStats[`avg_carbs_${type}`] = Math.round(sum / typeLogs.length);
         } else {
-            // Defaults based on common patterns if no data
             const defaults = { breakfast: 30, lunch: 50, dinner: 60, snack: 15 };
             mealStats[`avg_carbs_${type}`] = defaults[type];
         }
     });
 
     let confidence = 'Low';
-    const validLogCount = isfLogs.length;
-    if (validLogCount >= 15) confidence = 'High';
-    else if (validLogCount >= 5) confidence = 'Medium';
+    if (isfLogs.length >= 10) confidence = 'High';
+    else if (isfLogs.length >= 3) confidence = 'Medium';
 
     const stats = {
-        avg_isf: avgISF,
+        avg_isf: finalISF,
         avg_cir: avgCIR,
         confidence_score: confidence,
         total_logs: logs.length,
@@ -111,140 +143,96 @@ const reCalculateUserStats = async (userId) => {
 };
 
 /**
- * Provides an insulin dose suggestion using ISF, IOB, and Carbohydrate intake.
- * Formula: Suggested Units = ((Current Glucose - Target) / ISF - IOB) + (Carbs / CIR)
- * Falls back to 1700 Rule for ISF and 1:15 for CIR if no personal data exists.
+ * Provides safe dose suggestions with explicit breakdown and caps.
  */
 const getInsulinSuggestion = async (userId, currentGlucose, carbs = 0) => {
     const userDoc = await db.collection('users').doc(userId).get();
     if (!userDoc.exists) return { suggestion: 0, reason: 'User not found' };
 
     const data = userDoc.data();
-    const health = data.health || {};
-    const lifestyle = data.lifestyle || {};
-    const insulin = data.insulin || {};
     const stats = data.stats || {};
+    const health = data.health || {};
+    const insulinData = data.insulin || {};
 
-    const targetMin = health.target_glucose_min || 80;
-    const targetMax = health.target_glucose_max || 140;
-    const targetMid = (targetMin + targetMax) / 2;
+    const targetMid = ( (health.target_glucose_min || 80) + (health.target_glucose_max || 140) ) / 2;
 
-    // —— 1. FETCH IOB (Insulin on Board) ——
-    const fourHoursAgo = new Date();
-    fourHoursAgo.setHours(fourHoursAgo.getHours() - 4);
-
+    // 1. Fetch IOB (4-hour decay)
+    const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000);
     const recentLogsSnapshot = await db.collection('users').doc(userId).collection('logs')
         .where('timestamp', '>=', fourHoursAgo.toISOString())
         .get();
 
     let iob = 0;
-    const now = new Date();
     recentLogsSnapshot.forEach(doc => {
         const log = doc.data();
-
-        // IOB Tracking should ONLY consider Rapid-Acting insulin.
-        // We prioritizing 'insulin_rapid' field, but fallback to 'insulin_units' for older logs.
-        const rapidUnits = log.insulin_rapid || (log.insulin_type !== 'basal' ? log.insulin_units : 0);
-
-        if (rapidUnits > 0) {
-            const logTime = new Date(log.timestamp);
-            const hoursPassed = (now - logTime) / (1000 * 60 * 60);
-            if (hoursPassed < 4) {
-                const percentActive = 1 - (hoursPassed / 4);
-                iob += rapidUnits * percentActive;
-            }
+        const rapid = log.insulin_rapid || (log.insulin_type !== 'basal' ? log.insulin_units : 0);
+        if (rapid > 0) {
+            const hoursPassed = (Date.now() - new Date(log.timestamp)) / (1000 * 60 * 60);
+            if (hoursPassed < 4) iob += rapid * (1 - (hoursPassed / 4));
         }
     });
 
-    // —— 2. SAFETY CHECKS ——
-    if (currentGlucose < 70) {
-        return {
-            suggestion: 0,
-            alert: 'LOW SUGAR ALERT!',
-            risk: 'High',
-            iob: parseFloat(iob.toFixed(1)),
-            reason: 'Critical hypoglycemia. Do not take insulin. Consume 15g fast-acting sugar immediately.'
-        };
-    }
-
-    // —— 3. ISF & CIR (Learning or Fallback) ——
+    // 2. Get Clinical Benchmarks
     let isf = stats.avg_isf;
-    let isfSource = 'Personal';
+    let isfSource = 'Safe Learned';
     if (!isf || isf <= 0) {
-        // Preference: Actual Daily Dose > Weight-based guess > Default
-        const tdd = parseFloat(insulin.daily_dose) || (parseFloat(health.weight) * 0.5) || 50; 
+        const tdd = parseFloat(insulinData.daily_dose) || (parseFloat(health.weight) * 0.5) || 50; 
         isf = 1700 / tdd;
-        isfSource = insulin.daily_dose ? 'Estimated (Profile Daily Dose)' : 'Estimated (Weight Formula)';
+        isfSource = 'Calculated from Profile';
     }
 
-    // CIR: Carb-to-Insulin Ratio (How many grams 1 unit covers)
-    // Fallback: 1:15 is standard for most adults.
     let cir = stats.avg_cir || 15;
-    let cirSource = stats.avg_cir ? 'Personal' : 'Default (1:15)';
+    let cirSource = stats.avg_cir ? 'Safe Learned' : 'Default Ratio';
 
-    // —— 4. CALCULATE DOSES ——
-
-    // A. Correction Dose (for high sugar)
-    const dropNeeded = Math.max(0, currentGlucose - targetMid);
-    let correctionDose = dropNeeded / isf;
-
-    // B. Meal Dose (for carbohydrates)
-    let mealDose = carbs / cir;
-
-    // —— 5. IOB DEDUCTION ——
-    // Only subtract IOB from Correction Dose (don't subtract from meal dose usually)
-    let iobAdjustmentMsg = '';
-    let netCorrection = correctionDose;
-    if (iob > 0) {
-        netCorrection = Math.max(0, correctionDose - iob);
-        iobAdjustmentMsg = `IOB of ${iob.toFixed(1)} units subtracted from correction.`;
+    // 3. Trend Detection (Predictive)
+    const lastLogs = await db.collection('users').doc(userId).collection('logs')
+        .orderBy('timestamp', 'desc')
+        .limit(1)
+        .get();
+    
+    let trendMsg = '';
+    if (!lastLogs.empty) {
+        const lastLog = lastLogs.docs[0].data();
+        const timeDiff = (Date.now() - new Date(lastLog.timestamp)) / (1000 * 60 * 60);
+        if (timeDiff < 3) { // Only trend if last reading was in last 3 hours
+            const glucoseDiff = currentGlucose - lastLog.glucose_before;
+            if (glucoseDiff > 40) trendMsg = '⚡ Rising rapidly! +'+glucoseDiff+' mg/dL in 2h.';
+        }
     }
 
-    let rawSuggested = netCorrection + mealDose;
+    const correctionGap = Math.max(0, currentGlucose - targetMid);
+    const rawCorrection = correctionGap / isf;
+    const netCorrection = Math.max(0, rawCorrection - iob);
+    const mealDose = carbs / cir;
 
-    // —— 6. ACTIVITY ADJUSTMENTS ——
-    let activityAdjustmentMsg = '';
-    const activity = lifestyle.activity_level || 'None';
-    if (activity === 'Heavy') {
-        rawSuggested *= 0.8;
-        activityAdjustmentMsg = 'Reduced by 20% due to Heavy Activity level.';
-    } else if (activity === 'Moderate') {
-        rawSuggested *= 0.9;
-        activityAdjustmentMsg = 'Reduced by 10% due to Moderate Activity level.';
-    }
+    let totalDose = netCorrection + mealDose;
 
-    // —— 7. SAFETY CAP ——
-    const cap = 20;
-    const finalSuggestion = Math.min(rawSuggested, cap);
+    // 4. Safety Logic
+    const correctionCapped = netCorrection > SAFETY_CONFIG.MAX_CORRECTION_DOSE;
+    const finalCorrection = Math.min(netCorrection, SAFETY_CONFIG.MAX_CORRECTION_DOSE);
+    
+    let finalTotal = finalCorrection + mealDose;
+    const totalCapped = finalTotal > SAFETY_CONFIG.MAX_TOTAL_DOSE;
+    finalTotal = Math.min(finalTotal, SAFETY_CONFIG.MAX_TOTAL_DOSE);
 
     return {
-        suggestion: parseFloat(finalSuggestion.toFixed(1)),
-        isCapped: rawSuggested > cap,
-        target: targetMid,
-        targetMid: targetMid,
-        targetRange: [targetMin, targetMax],
-        isf: parseFloat(isf.toFixed(2)),
-        isfSource,
-        cir: cir,
-        cirSource,
-        iob: parseFloat(iob.toFixed(1)),
-        doses: {
-            correction: parseFloat(correctionDose.toFixed(1)),
-            meal: parseFloat(mealDose.toFixed(1)),
-            netCorrection: parseFloat(netCorrection.toFixed(1))
+        suggestion: parseFloat(finalTotal.toFixed(1)),
+        isCapped: correctionCapped || totalCapped,
+        trendAlert: trendMsg,
+        caps: {
+            correction: SAFETY_CONFIG.MAX_CORRECTION_DOSE,
+            total: SAFETY_CONFIG.MAX_TOTAL_DOSE
         },
-        confidence: stats.confidence_score || 'Not enough data',
-        iobAdjustment: iobAdjustmentMsg,
-        activityAdjustment: activityAdjustmentMsg,
-        risk: currentGlucose > 250 ? 'High' : (currentGlucose > 180 ? 'Medium' : 'Low'),
-        mealStats: stats.meal_stats || { breakfast: 30, lunch: 50, dinner: 60, snack: 15 },
-        suggestedMealType: (() => {
-            const hour = new Date().getHours();
-            if (hour >= 6 && hour < 11) return 'breakfast';
-            if (hour >= 11 && hour < 16) return 'lunch';
-            if (hour >= 18 && hour < 23) return 'dinner';
-            return 'snack';
-        })()
+        breakdown: {
+            correction: parseFloat(rawCorrection.toFixed(1)),
+            iob_deduction: parseFloat(iob.toFixed(1)),
+            net_correction: parseFloat(finalCorrection.toFixed(1)),
+            meal: parseFloat(mealDose.toFixed(1))
+        },
+        factors: { isf, isfSource, cir, cirSource },
+        target: targetMid,
+        risk: currentGlucose > 250 ? 'High' : (trendMsg ? 'Warning' : 'Normal'),
+        confidence: stats.confidence_score || 'Low'
     };
 };
 

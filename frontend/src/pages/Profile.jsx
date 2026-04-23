@@ -49,6 +49,20 @@ const Profile = () => {
   };
 
   const handleUpdate = async (section) => {
+    // --- CLINICAL SANITY CHECKS ---
+    if (section === 'insulin') {
+      const dose = parseFloat(profile.insulin.daily_dose);
+      if (dose > 150) {
+        if (!window.confirm("⚠️ EXTREME DOSE WARNING: You entered >150 units. This will cause the app to suggest very large doses. Is this correct?")) return;
+      }
+    }
+    if (section === 'health') {
+      const weight = parseFloat(profile.health.weight);
+      if (weight > 250 || weight < 10) {
+        if (!window.confirm(`⚠️ CHECK WEIGHT: You entered ${weight} kg. This seems unusual. Continue?`)) return;
+      }
+    }
+
     setSaving(true);
     setMessage({ text: '', type: '' });
     try {

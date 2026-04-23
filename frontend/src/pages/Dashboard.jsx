@@ -73,6 +73,7 @@ const Dashboard = ({ user, setUser }) => {
   const [lifestyle, setLifestyle] = useState({ activity_level: 'None' });
   const [risk, setRisk] = useState('Low');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalPreFill, setModalPreFill] = useState(null);
   const [pageLoading, setPageLoading] = useState(true);
   const [showHistory, setShowHistory] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -322,12 +323,12 @@ const Dashboard = ({ user, setUser }) => {
                       </div>
                       {suggestion.isCapped && (
                         <div style={{ marginTop: '8px', color: '#ffb74d', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 'bold' }}>
-                          <AlertTriangle size={16} /> Safety Cap Reached (Max 20 U per dose)
+                          <AlertTriangle size={16} /> ⚠️ SAFETY CAP REACHED!
                         </div>
                       )}
                     </div>
 
-                    {/* Insight Text */}
+                    {/* Proactive Insight Text */}
                     <div style={{
                       marginBottom: '20px', padding: '12px', borderRadius: '8px',
                       background: 'hsla(0,0%,100%,0.05)', borderLeft: '4px solid var(--primary)',
@@ -335,14 +336,14 @@ const Dashboard = ({ user, setUser }) => {
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
                         <BrainCircuit size={16} className="text-primary" />
-                        <span style={{ fontWeight: '700' }}>Smart Logic Insight</span>
+                        <span style={{ fontWeight: '700' }}>{suggestion.factors?.isfSource || 'Engine'} Logic</span>
                       </div>
                       <p style={{ color: 'var(--text-dim)', margin: 0, lineHeight: '1.4' }}>
-                        Dose calculated to bring you toward your target of <strong style={{ color: 'white' }}>{suggestion.target || 110} mg/dL</strong>.
+                        Calculated to reach **{suggestion.target || 110} mg/dL**. 
+                        {suggestion.breakdown?.iob_deduction > 0 && ` Subtracted ${suggestion.breakdown.iob_deduction}U for active insulin (IOB).`}
                       </p>
 
-                      {/* Clinical Pre-Bolus Advice */}
-                      {suggestion.doses?.meal > 0 && (
+                      {suggestion.breakdown?.meal > 0 && (
                         <div style={{
                           marginTop: '15px', padding: '12px', borderRadius: '8px',
                           background: 'hsla(140, 100%, 40%, 0.1)', borderLeft: '4px solid #4ade80',
@@ -350,39 +351,58 @@ const Dashboard = ({ user, setUser }) => {
                         }}>
                           <div style={{ fontWeight: 'bold', color: 'white', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <AlarmClock size={16} className="text-success" />
-                            Pre-Bolus Timing
+                            Pre-Bolus Advice
                           </div>
-                          <p style={{ margin: 0 }}>Inject **15-20 minutes BEFORE** eating. This stops the spike before it starts!</p>
+                          <p style={{ margin: 0 }}>Inject **15-20 mins BEFORE** eating to stop the spike.</p>
                         </div>
-                      )}
-
-                      {!suggestion.doses?.meal && !suggestion.doses?.netCorrection && (
-                        <p style={{ marginTop: '10px', color: '#ffb74d', fontSize: '0.85rem', fontWeight: 'bold' }}>
-                          💡 Tip: 100 is great! If you're about to eat, use the "Usual Meal" buttons above.
-                        </p>
-                      )}
-                      {suggestion.iobAdjustment && (
-                        <p style={{ color: '#ffb74d', marginTop: '6px', fontSize: '0.85rem', fontWeight: '500' }}>
-                          • {suggestion.iobAdjustment}
-                        </p>
                       )}
                     </div>
 
-                    {/* Breakdown */}
+                    {/* Modern Breakdown Table */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', color: 'var(--text-dim)', fontSize: '0.85rem' }}>
-                      <div style={{ padding: '10px', background: 'hsla(0,0%,100%,0.03)', borderRadius: '8px' }}>
-                        <span style={{ display: 'block', fontSize: '0.7rem' }}>CORRECTION</span>
-                        <span style={{ color: 'white', fontWeight: 'bold', fontSize: '1.1rem' }}>{suggestion.doses?.netCorrection || 0} U</span>
+                      <div style={{ padding: '12px', background: 'hsla(0,0%,100%,0.03)', borderRadius: '8px', border: '1px solid hsla(0,0%,100%,0.05)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                          <span style={{ fontSize: '0.65rem', textTransform: 'uppercase' }}>Correction</span>
+                          <span style={suggestion.breakdown?.correction !== suggestion.breakdown?.net_correction ? { textDecoration: 'line-through', opacity: 0.5 } : {}}>
+                            {suggestion.breakdown?.correction || 0}U
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: 'white', fontWeight: 'bold' }}>NET CORR:</span>
+                          <span style={{ color: 'white', fontWeight: 'bold' }}>{suggestion.breakdown?.net_correction || 0} U</span>
+                        </div>
                       </div>
-                      <div style={{ padding: '10px', background: 'hsla(0,0%,100%,0.03)', borderRadius: '8px' }}>
-                        <span style={{ display: 'block', fontSize: '0.7rem' }}>MEAL DOSE</span>
-                        <span style={{ color: 'white', fontWeight: 'bold', fontSize: '1.1rem' }}>{suggestion.doses?.meal || 0} U</span>
+                      <div style={{ padding: '12px', background: 'hsla(0,0%,100%,0.03)', borderRadius: '8px', border: '1px solid hsla(0,0%,100%,0.05)' }}>
+                        <span style={{ display: 'block', fontSize: '0.65rem', textTransform: 'uppercase', marginBottom: '5px' }}>Food Dose</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: 'white', fontWeight: 'bold' }}>MEAL:</span>
+                          <span style={{ color: 'white', fontWeight: 'bold' }}>{suggestion.breakdown?.meal || 0} U</span>
+                        </div>
                       </div>
+                    </div>
+
+                    {/* Unified Quick Actions */}
+                    <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
+                      <button 
+                        className="btn btn-primary" 
+                        style={{ flex: 1, justifyContent: 'center', height: '50px' }}
+                        onClick={() => {
+                          setModalPreFill({
+                            glucose: currentGlucose,
+                            carbs: currentCarbs,
+                            suggestion: suggestion.suggestion
+                          });
+                          setIsModalOpen(true);
+                        }}
+                      >
+                        <Zap size={18} /> Apply & Log Now
+                      </button>
                     </div>
                   </>
                 )}
               </div>
             )}
+
           </div>
 
           {/* Health Stats */}
@@ -504,10 +524,15 @@ const Dashboard = ({ user, setUser }) => {
 
         <LogEntryModal
           isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
+          preFill={modalPreFill}
+          onClose={() => {
+            setIsModalOpen(false);
+            setModalPreFill(null);
+          }}
           onLogAdded={() => {
             fetchDashboardData();
             setIsModalOpen(false);
+            setModalPreFill(null);
           }}
         />
       </div>

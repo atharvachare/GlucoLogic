@@ -11,7 +11,7 @@ const PORTION_DATA = [
   { id: 'milk', label: '🥛 Milk', grams: 12 },
 ];
 
-const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
+const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null, preFill = null }) => {
   const [formData, setFormData] = useState({
     glucose_before: '',
     glucose_after: '',
@@ -37,6 +37,21 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
         food_description: editData.food_description || '',
         activity_level: editData.activity_level || 'none'
       });
+    } else if (preFill) {
+      // PRO-ACTIVE LOGGING: Automatically set data from suggestion
+      const hour = new Date().getHours();
+      const mealType = (hour >= 6 && hour < 11) ? 'breakfast' : (hour >= 11 && hour < 16) ? 'lunch' : (hour >= 18 && hour < 23) ? 'dinner' : 'snack';
+      
+      setFormData({
+        glucose_before: preFill.glucose || '',
+        glucose_after: '',
+        insulin_rapid: preFill.suggestion || '',
+        insulin_long: '',
+        carbs: preFill.carbs || 0,
+        meal_type: mealType,
+        food_description: preFill.carbs > 0 ? `Meal with ${preFill.carbs}g carbs` : 'Sugar correction',
+        activity_level: 'none'
+      });
     } else {
       setFormData({
         glucose_before: '',
@@ -50,7 +65,7 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null }) => {
       });
       setPortions({ roti: 0, rice: 0, dal: 0, sabzi: 0, curd: 0, milk: 0 });
     }
-  }, [editData, isOpen]);
+  }, [editData, preFill, isOpen]);
 
   const updatePortion = (id, delta) => {
     // 1. Calculate new portion counts
