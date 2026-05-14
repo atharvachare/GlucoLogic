@@ -194,7 +194,6 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null, preFill =
                 <span style={{ fontWeight: 'bold', color: 'var(--primary)' }}>grams</span>
               </div>
             </div>
-          </div>
 
           <div style={{ marginBottom: '25px', padding: '20px', background: 'hsla(260, 100%, 70%, 0.1)', borderRadius: 'var(--radius)', border: '1px solid hsla(260, 100%, 70%, 0.3)' }}>
             <label style={{ display: 'block', marginBottom: '12px', fontSize: '0.95rem', fontWeight: 'bold', color: '#a78bfa', display: 'flex', alignItems: 'center', gap: '8px' }}>
