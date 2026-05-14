@@ -179,12 +179,13 @@ const getInsulinSuggestion = async (userId, currentGlucose, carbs = 0, activityD
         }
     });
 
-    // 2. Dynamic Activity Adjustment
+    // 2. Dynamic Activity Adjustment (Manual)
     let activityMultiplier = 1.0;
     if (activityData) {
-        if (activityData.activityLevel === 'Highly Active' || activityData.steps > 8000) activityMultiplier = 1.30;
-        else if (activityData.activityLevel === 'Moderate' || activityData.steps > 5000) activityMultiplier = 1.20;
-        else if (activityData.activityLevel === 'Lightly Active' || activityData.steps > 2000) activityMultiplier = 1.10;
+        const level = activityData.activity_level || activityData.activityLevel; // support both formats
+        if (level === 'heavy' || level === 'Highly Active') activityMultiplier = 1.30;
+        else if (level === 'moderate' || level === 'Moderate') activityMultiplier = 1.20;
+        else if (level === 'light' || level === 'Lightly Active') activityMultiplier = 1.10;
     }
 
     // 3. Get Clinical Benchmarks (Manual Profile > Learned > Fallback)

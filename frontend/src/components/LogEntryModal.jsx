@@ -25,21 +25,7 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null, preFill =
   const [portions, setPortions] = useState({ roti: 0, rice: 0, dal: 0, sabzi: 0, curd: 0, milk: 0 });
   const [loading, setLoading] = useState(false);
   const [extracting, setExtracting] = useState(false);
-  const [liveActivity, setLiveActivity] = useState(null);
 
-  useEffect(() => {
-    if (isOpen) fetchLiveActivity();
-  }, [isOpen]);
-
-  const fetchLiveActivity = async () => {
-    try {
-      const resp = await api.get('/activity/live');
-      setLiveActivity(resp.data);
-      if (!editData && !preFill) {
-        setFormData(prev => ({ ...prev, activity_level: resp.data.activityLevel.toLowerCase().split(' ')[0] }));
-      }
-    } catch (err) { console.error(err); }
-  };
 
   const handleSmartExtract = async () => {
     if (!formData.food_description) return;
@@ -285,13 +271,7 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null, preFill =
                   <option value="light">Light</option>
                   <option value="moderate">Moderate</option>
                   <option value="heavy">Heavy</option>
-                </select>
-              </div>
-              {liveActivity && (
-                <div style={{ fontSize: '0.7rem', color: 'var(--success)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <Zap size={10} /> Live: {liveActivity.steps} steps ({liveActivity.activityLevel})
-                </div>
-              )}
+              </select>
             </div>
           </div>
 

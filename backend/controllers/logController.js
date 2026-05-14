@@ -1,7 +1,6 @@
 const { db } = require('../firebase');
 const { calculateISF, reCalculateUserStats, getInsulinSuggestion } = require('../utils/engine');
 const { extractCarbs } = require('../utils/nutritionService');
-const { getLiveActivity } = require('../utils/activityService');
 
 const createLog = async (req, res) => {
     const { glucose_before, glucose_after, insulin_units, insulin_rapid, insulin_long, carbs, meal_type, food_description, activity_level } = req.body;
@@ -112,13 +111,11 @@ const getSuggestion = async (req, res) => {
     try {
         const glucoseNum = parseFloat(queryGlucose);
         const carbsNum = parseFloat(queryCarbs) || 0;
+        const activityLevel = req.query.activity_level || 'none';
 
-        // Fetch live activity data automatically
-        const activityData = await getLiveActivity(userId);
+        console.log(`[SuggestionRequest] User: ${userId}, Glucose: ${glucoseNum}, Carbs: ${carbsNum}, Activity: ${activityLevel}`);
 
-        console.log(`[SuggestionRequest] User: ${userId}, Glucose: ${glucoseNum}, Carbs: ${carbsNum}, Steps: ${activityData.steps}`);
-
-        const suggestionData = await getInsulinSuggestion(userId, glucoseNum, carbsNum, activityData);
+        const suggestionData = await getInsulinSuggestion(userId, glucoseNum, carbsNum, { activity_level: activityLevel });
         res.json(suggestionData);
     } catch (error) {
         console.error('Suggestion Error:', error);
@@ -136,15 +133,6 @@ const extractNutrition = async (req, res) => {
     }
 };
 
-const getLiveActivityData = async (req, res) => {
-    const userId = req.user.id;
-    try {
-        const activity = await getLiveActivity(userId);
-        res.json(activity);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-};
 
 const getDashboardStats = async (req, res) => {
     const userId = req.user.id;
@@ -305,5 +293,4 @@ const migrateISF = async (req, res) => {
     }
 };
 
-module.exports = { createLog, getLogs, getSuggestion, getDashboardStats, updateLog, deleteLog, migrateISF, extractNutrition, getLiveActivityData };
-
+module.exports = { createLog, getLogs, getSuggestion, getDashboardStats, updateLog, deleteLog, migrateISF, extractNutrition };
