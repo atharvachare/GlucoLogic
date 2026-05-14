@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../api';
-import { X, Send, Utensils, Activity, Droplets, BookOpen, Edit3 } from 'lucide-react';
+import { X, Send, Utensils, Activity, Droplets, BookOpen, Edit3, Zap } from 'lucide-react';
 
 const PORTION_DATA = [
   { id: 'roti', label: '🫓 Roti', grams: 20 },
