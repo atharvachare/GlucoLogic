@@ -1,6 +1,5 @@
 const { db } = require('../firebase');
 const { calculateISF, reCalculateUserStats, getInsulinSuggestion } = require('../utils/engine');
-const { extractCarbs } = require('../utils/nutritionService');
 
 const createLog = async (req, res) => {
     const { glucose_before, glucose_after, insulin_units, insulin_rapid, insulin_long, carbs, meal_type, food_description, activity_level } = req.body;
@@ -123,15 +122,6 @@ const getSuggestion = async (req, res) => {
     }
 };
 
-const extractNutrition = async (req, res) => {
-    const { food_description } = req.body;
-    try {
-        const carbs = await extractCarbs(food_description);
-        res.json({ carbs, food_description });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-};
 
 
 const getDashboardStats = async (req, res) => {
@@ -293,4 +283,4 @@ const migrateISF = async (req, res) => {
     }
 };
 
-module.exports = { createLog, getLogs, getSuggestion, getDashboardStats, updateLog, deleteLog, migrateISF, extractNutrition };
+module.exports = { createLog, getLogs, getSuggestion, getDashboardStats, updateLog, deleteLog, migrateISF };

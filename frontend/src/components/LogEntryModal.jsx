@@ -24,21 +24,8 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null, preFill =
   });
   const [portions, setPortions] = useState({ roti: 0, rice: 0, dal: 0, sabzi: 0, curd: 0, milk: 0 });
   const [loading, setLoading] = useState(false);
-  const [extracting, setExtracting] = useState(false);
 
 
-  const handleSmartExtract = async () => {
-    if (!formData.food_description) return;
-    setExtracting(true);
-    try {
-      const resp = await api.post('/nutrition/extract', { food_description: formData.food_description });
-      setFormData(prev => ({ ...prev, carbs: resp.data.carbs }));
-    } catch (err) {
-      console.error('Extraction failed', err);
-    } finally {
-      setExtracting(false);
-    }
-  };
 
   useEffect(() => {
     if (editData) {
@@ -181,28 +168,22 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null, preFill =
               </div>
             </div>
 
-          <div style={{ marginBottom: '25px', padding: '20px', background: 'hsla(260, 100%, 70%, 0.1)', borderRadius: 'var(--radius)', border: '1px solid hsla(260, 100%, 70%, 0.3)' }}>
-            <label style={{ display: 'block', marginBottom: '12px', fontSize: '0.95rem', fontWeight: 'bold', color: '#a78bfa', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Zap size={18} /> Smart AI Log (Text or Image)
+          <div style={{ marginBottom: '25px', padding: '15px', background: 'hsla(0,0%,100%,0.03)', borderRadius: 'var(--radius)', border: '1px dashed hsla(0,0%,100%,0.1)' }}>
+            <label style={{ display: 'block', marginBottom: '15px', fontSize: '0.9rem', color: 'var(--text-dim)', textAlign: 'center' }}>
+              Quick Indian Portion Picker (Auto-Calculate Carbs)
             </label>
-            <textarea
-              className="input-field" style={{ height: '80px', resize: 'none', background: 'rgba(0,0,0,0.2)', marginBottom: '12px' }} 
-              placeholder="e.g. '2 Phulkas, 1 bowl Dal and an Apple'"
-              value={formData.food_description} onChange={(e) => setFormData({ ...formData, food_description: e.target.value })}
-            ></textarea>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button 
-                type="button" 
-                className="btn btn-outline" 
-                style={{ flex: 1, borderColor: 'hsla(260, 100%, 70%, 0.5)', color: '#a78bfa' }}
-                onClick={handleSmartExtract}
-                disabled={extracting}
-              >
-                {extracting ? 'Analyzing...' : '✨ Auto-Extract Carbs'}
-              </button>
-              <button type="button" className="btn btn-outline" style={{ opacity: 0.6 }} onClick={() => alert('Camera integration coming soon!')}>
-                📷 Photo
-              </button>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
+              {PORTION_DATA.map(item => (
+                <div key={item.id} className="glass-card" style={{ padding: '10px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: portions[item.id] > 0 ? 'hsla(210, 100%, 50%, 0.15)' : 'rgba(0,0,0,0.2)' }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: '500' }}>{item.label}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <button type="button" onClick={() => updatePortion(item.id, -1)} style={{ width: '24px', height: '24px', borderRadius: '50%', border: '1px solid var(--glass-border)', background: 'none', color: 'white', cursor: 'pointer' }}>-</button>
+                    <span style={{ fontWeight: 'bold', minWidth: '15px', textAlign: 'center' }}>{portions[item.id]}</span>
+                    <button type="button" onClick={() => updatePortion(item.id, 1)} style={{ width: '24px', height: '24px', borderRadius: '50%', border: 'none', background: 'var(--primary)', color: 'white', cursor: 'pointer' }}>+</button>
+                  </div>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>{item.grams}g/ea</span>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -271,7 +252,8 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null, preFill =
                   <option value="light">Light</option>
                   <option value="moderate">Moderate</option>
                   <option value="heavy">Heavy</option>
-              </select>
+                </select>
+              </div>
             </div>
           </div>
 
