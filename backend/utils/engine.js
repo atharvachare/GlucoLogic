@@ -152,7 +152,7 @@ const reCalculateUserStats = async (userId) => {
 /**
  * Provides safe dose suggestions with explicit breakdown and caps.
  */
-const getInsulinSuggestion = async (userId, currentGlucose, carbs = 0) => {
+const getInsulinSuggestion = async (userId, currentGlucose, carbs = 0, activityData = null) => {
     const userDoc = await db.collection('users').doc(userId).get();
     if (!userDoc.exists) return { suggestion: 0, reason: 'User not found' };
 
@@ -179,25 +179,39 @@ const getInsulinSuggestion = async (userId, currentGlucose, carbs = 0) => {
         }
     });
 
-    // 2. Get Clinical Benchmarks (Manual Profile > Learned > Fallback)
-    let isf = parseFloat(insulinData.correction_factor) || stats.avg_isf;
+    // 2. Dynamic Activity Adjustment
+    let activityMultiplier = 1.0;
+    if (activityData) {
+        if (activityData.activityLevel === 'Highly Active' || activityData.steps > 8000) activityMultiplier = 1.30;
+        else if (activityData.activityLevel === 'Moderate' || activityData.steps > 5000) activityMultiplier = 1.20;
+        else if (activityData.activityLevel === 'Lightly Active' || activityData.steps > 2000) activityMultiplier = 1.10;
+    }
+
+    // 3. Get Clinical Benchmarks (Manual Profile > Learned > Fallback)
+    let baseISF = parseFloat(insulinData.correction_factor) || stats.avg_isf;
     let isfSource = parseFloat(insulinData.correction_factor) ? 'Doctor Set (Profile)' : (stats.avg_isf ? 'Safe Learned' : 'Calculated from Profile');
     
-    if (!isf || isf <= 0) {
+    if (!baseISF || baseISF <= 0) {
         const tdd = parseFloat(insulinData.daily_dose) || (parseFloat(health.weight) * 0.5) || 50; 
-        isf = 1700 / tdd;
+        baseISF = 1700 / tdd;
         isfSource = 'Estimated from Weight/TDD';
     }
 
-    let cir = parseFloat(insulinData.carb_ratio) || stats.avg_cir || 15;
+    // Apply activity boost to sensitivity
+    const isf = baseISF * activityMultiplier;
+
+    let baseCIR = parseFloat(insulinData.carb_ratio) || stats.avg_cir || 15;
     let cirSource = parseFloat(insulinData.carb_ratio) ? 'Doctor Set (Profile)' : (stats.avg_cir ? 'Safe Learned' : 'Default Ratio');
+    
+    // Apply activity boost to carb ratio (need less insulin per carb)
+    const cir = baseCIR * activityMultiplier;
 
     // Force "High" confidence if using a Doctor's manually set ratio
     const finalConfidence = (isfSource === 'Doctor Set (Profile)' || cirSource === 'Doctor Set (Profile)') 
         ? 'High (Doctor Set)' 
         : (stats.confidence_score || 'Low');
 
-    // 3. Trend Detection (Predictive)
+    // 4. Trend Detection (Predictive)
     const lastLogs = await db.collection('users').doc(userId).collection('logs')
         .orderBy('timestamp', 'desc')
         .limit(1)
@@ -218,8 +232,7 @@ const getInsulinSuggestion = async (userId, currentGlucose, carbs = 0) => {
     const netCorrection = Math.max(0, rawCorrection - iob);
     const mealDose = carbs / cir;
 
-    // 4. Adaptive Safety Logic
-    // Cap is 20% of TDD (min 12u). If TDD is 100, cap is 20u.
+    // 5. Adaptive Safety Logic
     const userTDD = parseFloat(insulinData.daily_dose) || (parseFloat(health.weight) * 0.5) || 50;
     const dynamicCorrectionCap = Math.max(12.0, userTDD * 0.20);
     
@@ -234,6 +247,7 @@ const getInsulinSuggestion = async (userId, currentGlucose, carbs = 0) => {
         suggestion: parseFloat(finalTotal.toFixed(1)),
         isCapped: correctionCapped || totalCapped,
         trendAlert: trendMsg,
+        activityBonus: Math.round((activityMultiplier - 1) * 100),
         caps: {
             correction: parseFloat(dynamicCorrectionCap.toFixed(1)),
             total: 30.0
@@ -247,7 +261,8 @@ const getInsulinSuggestion = async (userId, currentGlucose, carbs = 0) => {
         factors: { isf, isfSource, cir, cirSource },
         target: targetMid,
         risk: currentGlucose > 250 ? 'High' : (trendMsg ? 'Warning' : 'Normal'),
-        confidence: finalConfidence
+        confidence: finalConfidence,
+        activityUsed: activityData
     };
 };
 

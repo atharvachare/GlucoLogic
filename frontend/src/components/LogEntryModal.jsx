@@ -24,6 +24,35 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null, preFill =
   });
   const [portions, setPortions] = useState({ roti: 0, rice: 0, dal: 0, sabzi: 0, curd: 0, milk: 0 });
   const [loading, setLoading] = useState(false);
+  const [extracting, setExtracting] = useState(false);
+  const [liveActivity, setLiveActivity] = useState(null);
+
+  useEffect(() => {
+    if (isOpen) fetchLiveActivity();
+  }, [isOpen]);
+
+  const fetchLiveActivity = async () => {
+    try {
+      const resp = await api.get('/activity/live');
+      setLiveActivity(resp.data);
+      if (!editData && !preFill) {
+        setFormData(prev => ({ ...prev, activity_level: resp.data.activityLevel.toLowerCase().split(' ')[0] }));
+      }
+    } catch (err) { console.error(err); }
+  };
+
+  const handleSmartExtract = async () => {
+    if (!formData.food_description) return;
+    setExtracting(true);
+    try {
+      const resp = await api.post('/nutrition/extract', { food_description: formData.food_description });
+      setFormData(prev => ({ ...prev, carbs: resp.data.carbs }));
+    } catch (err) {
+      console.error('Extraction failed', err);
+    } finally {
+      setExtracting(false);
+    }
+  };
 
   useEffect(() => {
     if (editData) {
@@ -155,26 +184,6 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null, preFill =
 
         <form onSubmit={handleSubmit}>
           {/* Indian Portion Selector */}
-          <div style={{ marginBottom: '25px', padding: '15px', background: 'hsla(0,0%,100%,0.03)', borderRadius: 'var(--radius)', border: '1px dashed hsla(0,0%,100%,0.1)' }}>
-            <label style={{ display: 'block', marginBottom: '15px', fontSize: '0.95rem', fontWeight: 'bold', color: 'var(--primary)' }}>
-              Quick Indian Portion Picker (Auto-calculates Carbs)
-            </label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              {PORTION_DATA.map(item => (
-                <div key={item.id} style={{
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: '10px', background: 'hsla(0,0%,100%,0.05)', borderRadius: '12px'
-                }}>
-                  <span style={{ fontSize: '0.9rem' }}>{item.label}</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <button type="button" onClick={() => updatePortion(item.id, -1)} style={{ width: '28px', height: '28px', borderRadius: '50%', border: 'none', background: 'hsla(0,0%,100%,0.1)', color: 'white' }}>-</button>
-                    <span style={{ minWidth: '15px', textAlign: 'center', fontWeight: 'bold' }}>{portions[item.id]}</span>
-                    <button type="button" onClick={() => updatePortion(item.id, 1)} style={{ width: '28px', height: '28px', borderRadius: '50%', border: 'none', background: 'var(--primary)', color: 'white' }}>+</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
             <div style={{ marginTop: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span className="text-dim">Estimated Carbs:</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -184,6 +193,31 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null, preFill =
                 />
                 <span style={{ fontWeight: 'bold', color: 'var(--primary)' }}>grams</span>
               </div>
+            </div>
+          </div>
+
+          <div style={{ marginBottom: '25px', padding: '20px', background: 'hsla(260, 100%, 70%, 0.1)', borderRadius: 'var(--radius)', border: '1px solid hsla(260, 100%, 70%, 0.3)' }}>
+            <label style={{ display: 'block', marginBottom: '12px', fontSize: '0.95rem', fontWeight: 'bold', color: '#a78bfa', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Zap size={18} /> Smart AI Log (Text or Image)
+            </label>
+            <textarea
+              className="input-field" style={{ height: '80px', resize: 'none', background: 'rgba(0,0,0,0.2)', marginBottom: '12px' }} 
+              placeholder="e.g. '2 Phulkas, 1 bowl Dal and an Apple'"
+              value={formData.food_description} onChange={(e) => setFormData({ ...formData, food_description: e.target.value })}
+            ></textarea>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button 
+                type="button" 
+                className="btn btn-outline" 
+                style={{ flex: 1, borderColor: 'hsla(260, 100%, 70%, 0.5)', color: '#a78bfa' }}
+                onClick={handleSmartExtract}
+                disabled={extracting}
+              >
+                {extracting ? 'Analyzing...' : '✨ Auto-Extract Carbs'}
+              </button>
+              <button type="button" className="btn btn-outline" style={{ opacity: 0.6 }} onClick={() => alert('Camera integration coming soon!')}>
+                📷 Photo
+              </button>
             </div>
           </div>
 
@@ -254,6 +288,11 @@ const LogEntryModal = ({ isOpen, onClose, onLogAdded, editData = null, preFill =
                   <option value="heavy">Heavy</option>
                 </select>
               </div>
+              {liveActivity && (
+                <div style={{ fontSize: '0.7rem', color: 'var(--success)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Zap size={10} /> Live: {liveActivity.steps} steps ({liveActivity.activityLevel})
+                </div>
+              )}
             </div>
           </div>
 

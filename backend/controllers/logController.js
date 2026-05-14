@@ -1,5 +1,7 @@
 const { db } = require('../firebase');
 const { calculateISF, reCalculateUserStats, getInsulinSuggestion } = require('../utils/engine');
+const { extractCarbs } = require('../utils/nutritionService');
+const { getLiveActivity } = require('../utils/activityService');
 
 const createLog = async (req, res) => {
     const { glucose_before, glucose_after, insulin_units, insulin_rapid, insulin_long, carbs, meal_type, food_description, activity_level } = req.body;
@@ -100,7 +102,6 @@ const getLogs = async (req, res) => {
 
 const getSuggestion = async (req, res) => {
     const userId = req.user.id;
-    // Extract with fallback to ensure no undefined values
     const queryGlucose = req.query.current_glucose;
     const queryCarbs = req.query.carbs;
 
@@ -112,12 +113,35 @@ const getSuggestion = async (req, res) => {
         const glucoseNum = parseFloat(queryGlucose);
         const carbsNum = parseFloat(queryCarbs) || 0;
 
-        console.log(`[SuggestionRequest] User: ${userId}, Glucose: ${glucoseNum}, Carbs: ${carbsNum}`);
+        // Fetch live activity data automatically
+        const activityData = await getLiveActivity(userId);
 
-        const suggestionData = await getInsulinSuggestion(userId, glucoseNum, carbsNum);
+        console.log(`[SuggestionRequest] User: ${userId}, Glucose: ${glucoseNum}, Carbs: ${carbsNum}, Steps: ${activityData.steps}`);
+
+        const suggestionData = await getInsulinSuggestion(userId, glucoseNum, carbsNum, activityData);
         res.json(suggestionData);
     } catch (error) {
         console.error('Suggestion Error:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+const extractNutrition = async (req, res) => {
+    const { food_description } = req.body;
+    try {
+        const carbs = await extractCarbs(food_description);
+        res.json({ carbs, food_description });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+const getLiveActivityData = async (req, res) => {
+    const userId = req.user.id;
+    try {
+        const activity = await getLiveActivity(userId);
+        res.json(activity);
+    } catch (error) {
         res.status(500).json({ error: error.message });
     }
 };
@@ -281,5 +305,5 @@ const migrateISF = async (req, res) => {
     }
 };
 
-module.exports = { createLog, getLogs, getSuggestion, getDashboardStats, updateLog, deleteLog, migrateISF };
+module.exports = { createLog, getLogs, getSuggestion, getDashboardStats, updateLog, deleteLog, migrateISF, extractNutrition, getLiveActivityData };
 

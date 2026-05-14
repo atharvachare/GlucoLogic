@@ -204,6 +204,27 @@ const Dashboard = ({ user, setUser }) => {
           fetchDashboardData();
         }} />}
 
+        {/* 2-Hour Check Reminder */}
+        {recentLogs.find(l => l.insulin_rapid > 0 && !l.glucose_after && (new Date() - new Date(l.timestamp)) < 4 * 60 * 60 * 1000) && (
+          <div className="glass-card animate-slide-in" style={{ padding: '20px', background: 'hsla(210, 100%, 50%, 0.1)', border: '1px solid var(--primary)', marginBottom: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '5px' }}>
+                <BrainCircuit className="text-primary" /> Brain is Waiting for Data
+              </h4>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>
+                You took insulin {Math.round((new Date() - new Date(recentLogs.find(l => l.insulin_rapid > 0 && !l.glucose_after).timestamp)) / (1000 * 60))} mins ago.
+                Log your **After-Meal Sugar** to help me learn!
+              </p>
+            </div>
+            <button className="btn btn-primary" onClick={() => {
+              setModalPreFill(recentLogs.find(l => l.insulin_rapid > 0 && !l.glucose_after));
+              setIsModalOpen(true);
+            }}>
+              Log Now
+            </button>
+          </div>
+        )}
+
         {user.mode === 'kids' && (
           <div className="glass-card animate-fade-in" style={{ padding: '15px', marginBottom: '30px', background: 'var(--primary)', color: 'white', display: 'flex', justifyContent: 'center', gap: '20px', fontSize: '1.2rem', fontWeight: 'bold' }}>
             <span>🌟 Points: {stats.total_logs * 10}</span>
@@ -342,6 +363,20 @@ const Dashboard = ({ user, setUser }) => {
                         Calculated to reach **{suggestion.target || 110} mg/dL**. 
                         {suggestion.breakdown?.iob_deduction > 0 && ` Subtracted ${suggestion.breakdown.iob_deduction}U for active insulin (IOB).`}
                       </p>
+
+                      {suggestion.activityBonus > 0 && (
+                        <div style={{
+                          marginTop: '15px', padding: '12px', borderRadius: '8px',
+                          background: 'hsla(180, 100%, 50%, 0.1)', borderLeft: '4px solid #06b6d4',
+                          fontSize: '0.85rem'
+                        }}>
+                          <div style={{ fontWeight: 'bold', color: 'white', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <ActivityIcon size={16} style={{ color: '#06b6d4' }} />
+                            Activity Bonus Applied: -{suggestion.activityBonus}%
+                          </div>
+                          <p style={{ margin: 0, fontSize: '0.75rem' }}>Live Steps: **{suggestion.activityUsed?.steps || 0}**. Higher sensitivity detected.</p>
+                        </div>
+                      )}
 
                       {suggestion.breakdown?.meal > 0 && (
                         <div style={{

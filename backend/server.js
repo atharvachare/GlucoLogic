@@ -13,7 +13,7 @@ app.use(express.json());
 
 // Import controllers
 const authController = require('./controllers/authController');
-const { createLog, getLogs, getSuggestion, getDashboardStats, updateLog, deleteLog, migrateISF } = require('./controllers/logController');
+const { createLog, getLogs, getSuggestion, getDashboardStats, updateLog, deleteLog, migrateISF, extractNutrition, getLiveActivityData } = require('./controllers/logController');
 const profileRoutes = require('./routes/profile');
 
 // Auth Routes
@@ -33,6 +33,10 @@ app.put('/api/logs/:id', authMiddleware, updateLog);
 app.delete('/api/logs/:id', authMiddleware, deleteLog);
 app.get('/api/suggestions', authMiddleware, getSuggestion);
 app.get('/api/dashboard', authMiddleware, getDashboardStats);
+
+// Nutrition & Activity Routes
+app.post('/api/nutrition/extract', authMiddleware, extractNutrition);
+app.get('/api/activity/live', authMiddleware, getLiveActivityData);
 
 // Start server
 app.listen(PORT, () => {
